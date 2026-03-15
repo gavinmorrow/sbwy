@@ -26,9 +26,11 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
   if (
-    event.request.url.includes("model_stream") ||
-    event.request.url.includes("service-worker")
+    !url.pathname.startsWith("/static") ||
+    url.pathname.includes("model_stream") ||
+    url.pathname.includes("service-worker")
   )
     return;
 
