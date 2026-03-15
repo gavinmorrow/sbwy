@@ -91,7 +91,7 @@ body {
 
     background-color: var(--li-color-bg);
     &.highlight {
-      --li-color-bg: var(--color-bg-row-highlight);
+      --li-normal-color-bg: var(--color-bg-row-highlight);
     }
 
     box-sizing: border-box;
