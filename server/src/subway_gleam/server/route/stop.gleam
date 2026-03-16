@@ -11,12 +11,12 @@ import gleam/time/timestamp
 import gleam/uri
 import lustre/attribute
 import lustre/element/html
-import subway_gleam/shared/util/time
 import wisp
 
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
 import subway_gleam/server/hydration_scripts.{hydration_scripts}
+import subway_gleam/server/log
 import subway_gleam/server/lustre_middleware.{Document, try_lustre_res}
 import subway_gleam/server/state
 import subway_gleam/server/state/gtfs_store
@@ -25,16 +25,21 @@ import subway_gleam/shared/component/route_bullet
 import subway_gleam/shared/route/stop
 import subway_gleam/shared/util
 import subway_gleam/shared/util/live_status
+import subway_gleam/shared/util/time
 
 pub fn stop(
   req: wisp.Request,
   state: state.State,
   stop_id: String,
 ) -> wisp.Response {
+  use <- log.time("stop route")
+
   use req <- try_lustre_res(req)
 
   case model(state, stop_id, req.query) {
     Ok(model) -> {
+      use <- log.time("post-model")
+
       let head = [
         html.title([], "Trains at " <> model.name),
         hydration_scripts("stop", stop.model_to_json(model)),
@@ -57,6 +62,8 @@ pub fn model(
   stop_id: String,
   query: option.Option(String),
 ) -> Result(stop.Model, Error) {
+  use <- log.time("model")
+
   // TODO: make this a function?
   let highlighted_train =
     query

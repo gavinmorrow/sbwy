@@ -1,6 +1,7 @@
 import envoy
 import gleam/int
 import gleam/result
+import logging
 
 pub fn host() -> String {
   case envoy.get("host") {
@@ -29,4 +30,21 @@ pub fn certfile() -> Result(String, Nil) {
 
 pub fn keyfile() -> Result(String, Nil) {
   envoy.get("keyfile")
+}
+
+pub fn log_level() {
+  envoy.get("log_level")
+  |> result.try(fn(level) {
+    case level {
+      "emergency" -> Ok(logging.Emergency)
+      "alert" -> Ok(logging.Alert)
+      "critical" -> Ok(logging.Critical)
+      "error" -> Ok(logging.Error)
+      "warning" -> Ok(logging.Warning)
+      "notice" -> Ok(logging.Notice)
+      "info" -> Ok(logging.Info)
+      "debug" -> Ok(logging.Debug)
+      _ -> Error(Nil)
+    }
+  })
 }

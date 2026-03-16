@@ -4,6 +4,7 @@ import gleam/http/response
 import gleam/int
 import gleam/option
 import gleam/result
+import logging
 import mist
 import repeatedly
 import subway_gleam/server/log
@@ -97,6 +98,7 @@ fn mist_handler(
   wisp_handler: fn(request.Request(mist.Connection)) ->
     response.Response(mist.ResponseData),
 ) -> response.Response(mist.ResponseData) {
+  use <- log.time("mist_handler")
   case request.path_segments(req) {
     // TODO: figure out some abstraction for this. also move out of this file
     ["stop", stop_id, "model_stream"] ->
@@ -118,6 +120,7 @@ fn mist_handler(
 }
 
 fn handler(state: state.State, req: wisp.Request) -> wisp.Response {
+  use <- log.time("wisp_handler")
   use <- wisp.rescue_crashes
   use req <- wisp.csrf_known_header_protection(req)
 
@@ -150,5 +153,15 @@ fn handler(state: state.State, req: wisp.Request) -> wisp.Response {
   }
 }
 
-@external(erlang, "logger_config_ffi", "configure")
-fn configure_logger() -> Nil
+fn configure_logger() -> Nil {
+  case env.log_level() {
+    Ok(logging.Info) -> configure_logger_level_info()
+    _ -> configure_logger_level_all()
+  }
+}
+
+@external(erlang, "logger_config_ffi", "configure_level_info")
+fn configure_logger_level_info() -> Nil
+
+@external(erlang, "logger_config_ffi", "configure_level_all")
+fn configure_logger_level_all() -> Nil

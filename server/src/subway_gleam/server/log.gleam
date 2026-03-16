@@ -133,6 +133,26 @@ pub fn request(
   res
 }
 
+pub fn time(name: String, fun: fn() -> anything) -> anything {
+  let start = timestamp.system_time()
+
+  let res = fun()
+
+  let end = timestamp.system_time()
+  let time =
+    timestamp.difference(start, end)
+    |> duration.to_milliseconds
+    |> int.to_string
+
+  log(
+    "Func " <> name <> " called",
+    at: logging.Info,
+    with: context([#("time", time)]),
+  )
+
+  res
+}
+
 pub opaque type Context {
   Context(data: dict.Dict(String, String))
 }
