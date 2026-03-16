@@ -1,4 +1,4 @@
-# subway_gleam
+# sbwy
 
 This is a little web app to view subway arrival times for the NYC Subway :]
 
