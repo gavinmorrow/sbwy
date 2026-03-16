@@ -8,6 +8,7 @@ import gleam/option
 import gleam/result
 import gleam/string
 import gleam/time/calendar
+import gleam/time/duration
 import gleam/time/timestamp
 import logging
 import subway_gleam/server/time_zone
@@ -92,6 +93,8 @@ pub fn request(
   req: Request(req),
   next: fn(Request(req), Context) -> Response(res),
 ) -> Response(res) {
+  let start_time = timestamp.system_time()
+
   let Request(method:, path:, query:, ..) = req
 
   let id = int.random(0x1_0000_0000) |> int.to_base16
@@ -111,10 +114,20 @@ pub fn request(
   let res = next(req, context)
   let response.Response(status:, headers: _, body: _) = res
 
+  let end_time = timestamp.system_time()
+  let res_time = timestamp.difference(start_time, end_time)
+
   log(
     "Returning response",
     at: logging.Info,
-    with: context |> add_context([#("status", status |> int.to_string)]),
+    with: context
+      |> add_context([
+        #("status", status |> int.to_string),
+        #(
+          "res_time",
+          { res_time |> duration.to_milliseconds |> int.to_string } <> "ms",
+        ),
+      ]),
   )
 
   res
