@@ -8,6 +8,7 @@ import logging
 import mist
 import repeatedly
 import subway_gleam/server/log
+import tzif/database as tzif
 import wisp
 import wisp/wisp_mist
 
@@ -45,7 +46,8 @@ pub fn main() -> Nil {
     }
   }
   let assert Ok(gtfs_store) = gtfs_store.new()
-  let state = state.State(priv_dir:, schedule:, gtfs_store:)
+  let assert Ok(tz_db) = tzif.load_from_os()
+  let state = state.State(priv_dir:, schedule:, gtfs_store:, tz_db:)
 
   log.debug("Setup initial state.", with: log.new_context())
 

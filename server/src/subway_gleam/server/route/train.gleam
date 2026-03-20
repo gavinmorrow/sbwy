@@ -95,9 +95,12 @@ pub fn model(
       )
     })
 
-  let cur_time = time_zone.now()
+  let cur_time = time_zone.now(state.tz_db)
   let last_updated =
-    time.Time(last_updated, time_zone.new_york_offset(last_updated))
+    time.Time(
+      last_updated,
+      state.tz_db |> time_zone.new_york_offset(last_updated),
+    )
 
   Ok(train.Model(
     last_updated:,

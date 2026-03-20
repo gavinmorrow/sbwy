@@ -11,7 +11,7 @@ import gleam/time/calendar
 import gleam/time/duration
 import gleam/time/timestamp
 import logging
-import subway_gleam/server/time_zone
+import subway_gleam/server/env
 
 fn log(
   message: String,
@@ -20,7 +20,7 @@ fn log(
 ) -> Nil {
   let now = {
     let now = timestamp.system_time()
-    use offset <- result.map(time_zone.new_york_offset(now))
+    let offset = env.log_tz_offset() |> result.unwrap(or: duration.hours(0))
 
     let #(
       calendar.Date(year:, month:, day:),
@@ -51,7 +51,6 @@ fn log(
     <> seconds
     <> " "
   }
-  let now = result.unwrap(now, or: "")
 
   let message = now <> message <> "\t<< " <> context_to_string(context)
   logging.log(level, message)

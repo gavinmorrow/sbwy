@@ -1,6 +1,7 @@
 import envoy
 import gleam/int
 import gleam/result
+import gleam/time/duration
 import logging
 
 pub fn host() -> String {
@@ -47,4 +48,10 @@ pub fn log_level() {
       _ -> Error(Nil)
     }
   })
+}
+
+pub fn log_tz_offset() -> Result(duration.Duration, Nil) {
+  envoy.get("log_tz_offset")
+  |> result.try(int.parse)
+  |> result.map(duration.hours)
 }

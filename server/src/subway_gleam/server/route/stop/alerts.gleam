@@ -61,9 +61,12 @@ pub fn alerts(
   let all_routes =
     set.map(all_routes, with: st.route_data(in: state.schedule, for: _))
 
-  let cur_time = time_zone.now()
+  let cur_time = time_zone.now(state.tz_db)
   let last_updated =
-    time.Time(last_updated, time_zone.new_york_offset(last_updated))
+    time.Time(
+      last_updated,
+      state.tz_db |> time_zone.new_york_offset(last_updated),
+    )
 
   let model =
     alerts.Model(
@@ -87,7 +90,7 @@ fn rt_alert_to_model_alert(alert: rt.Alert, state: state.State) -> alerts.Alert 
   let updated =
     alert.updated
     |> option.map(fn(updated) {
-      time.Time(updated, time_zone.new_york_offset(updated))
+      time.Time(updated, state.tz_db |> time_zone.new_york_offset(updated))
     })
 
   alerts.Alert(

@@ -156,9 +156,12 @@ pub fn model(
   // let uptown = uptown |> list.take(from: _, up_to: 10)
   // let downtown = downtown |> list.take(from: _, up_to: 10)
 
-  let cur_time = time_zone.now()
+  let cur_time = time_zone.now(state.tz_db)
   let last_updated =
-    time.Time(last_updated, time_zone.new_york_offset(at: last_updated))
+    time.Time(
+      last_updated,
+      state.tz_db |> time_zone.new_york_offset(at: last_updated),
+    )
 
   Ok(stop.Model(
     id: stop.id,
