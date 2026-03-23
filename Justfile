@@ -7,6 +7,10 @@ start: build-client start-server
 start-server:
     gleam run -m subway_gleam/server
 
+[working-directory: 'server']
+start-prof:
+    gleam run -m server_prof
+
 # TODO: automate this somehow?
 # also maybe move into submodules
 # maybe use make?

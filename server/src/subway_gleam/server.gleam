@@ -1,4 +1,5 @@
 import gleam/erlang/process
+import gleam/float
 import gleam/http/request
 import gleam/http/response
 import gleam/int
@@ -30,6 +31,12 @@ import subway_gleam/shared/route/stop as shared_stop
 import subway_gleam/shared/route/train as shared_train
 
 pub fn main() -> Nil {
+  start(sleeping_after: Error(Nil))
+}
+
+// The sleeping_after parameter exists so that the server automatically shuts
+// down after a given amount of time when profiling.
+pub fn start(sleeping_after sleep_after_ms: Result(Int, Nil)) -> Nil {
   wisp.configure_logger()
   configure_logger()
 
@@ -86,9 +93,20 @@ pub fn main() -> Nil {
       |> mist.start
   }
 
-  log.debug("Main process sleeping forever...", with: log.new_context())
-
-  process.sleep_forever()
+  case sleep_after_ms {
+    Ok(ms) -> {
+      let sec = int.to_float(ms) /. 1000.0
+      log.debug(
+        "Main process sleeping for " <> float.to_string(sec) <> "sec...",
+        with: log.new_context(),
+      )
+      process.sleep(ms)
+    }
+    Error(Nil) -> {
+      log.debug("Main process sleeping forever...", with: log.new_context())
+      process.sleep_forever()
+    }
+  }
 }
 
 // This is done b/c wisp doesn't support some features (e.g. websockets,

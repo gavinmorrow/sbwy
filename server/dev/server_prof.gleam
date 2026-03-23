@@ -3,7 +3,9 @@ import gleam/string
 import subway_gleam/server
 
 pub fn main() {
-  start(server.main) |> string.inspect |> io.println
+  start(fn() { server.start(sleeping_after: Ok(30 * 1000)) })
+  |> string.inspect
+  |> io.println
 }
 
 @external(erlang, "server_prof_ffi", "start")
