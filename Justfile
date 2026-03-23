@@ -13,6 +13,12 @@ start-prof:
     # the [env()] attribute doesn't seem to override
     https_port=3000 http_port=3003 gleam run -m server_prof
 
+[working-directory: 'server']
+start-stop-prof:
+    # Set these env vars here to override .env file
+    # the [env()] attribute doesn't seem to override
+    profile_stop_page=true https_port=3000 http_port=3003 gleam run -m subway_gleam/server
+
 # TODO: automate this somehow?
 # also maybe move into submodules
 # maybe use make?

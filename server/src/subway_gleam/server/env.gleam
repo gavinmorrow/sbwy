@@ -48,3 +48,7 @@ pub fn log_tz_offset() -> Result(duration.Duration, Nil) {
   |> result.try(int.parse)
   |> result.map(duration.hours)
 }
+
+pub fn profile_stop_page() -> Bool {
+  envoy.get("profile_stop_page") == Ok("true")
+}

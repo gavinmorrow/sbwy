@@ -8,6 +8,7 @@ import gleam/result
 import logging
 import mist
 import repeatedly
+import subway_gleam/server/eprof
 import subway_gleam/server/log
 import tzif/database as tzif
 import wisp
@@ -160,7 +161,12 @@ fn handler(state: state.State, req: wisp.Request) -> wisp.Response {
     [] -> route.index(req)
     ["map"] -> route.map(req)
     ["stops"] -> route.stops(req, state)
-    ["stop", stop_id] -> route.stop(req, state, stop_id)
+    ["stop", stop_id] -> {
+      case env.profile_stop_page() {
+        True -> eprof.eprof(fn() { route.stop(req, state, stop_id) })
+        False -> route.stop(req, state, stop_id)
+      }
+    }
     ["stop", _stop_id, "alerts"] ->
       // slightly hacky, but this works b/c if the route is unrecognized, then
       // it'll show the alerts for all routes.
