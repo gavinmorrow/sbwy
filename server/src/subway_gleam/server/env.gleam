@@ -5,24 +5,20 @@ import gleam/time/duration
 import logging
 
 pub fn host() -> String {
-  case envoy.get("host") {
-    Ok(host) -> host
-    Error(Nil) -> "127.0.0.1"
-  }
+  envoy.get("host")
+  |> result.unwrap(or: "127.0.0.1")
 }
 
 pub fn http_port() -> Int {
-  case envoy.get("http_port") |> result.try(int.parse) {
-    Ok(port) -> port
-    Error(Nil) -> 8080
-  }
+  envoy.get("http_port")
+  |> result.try(int.parse)
+  |> result.unwrap(or: 8080)
 }
 
 pub fn https_port() -> Int {
-  case envoy.get("https_port") |> result.try(int.parse) {
-    Ok(port) -> port
-    Error(Nil) -> 4433
-  }
+  envoy.get("https_port")
+  |> result.try(int.parse)
+  |> result.unwrap(or: 4433)
 }
 
 pub fn certfile() -> Result(String, Nil) {
@@ -34,20 +30,17 @@ pub fn keyfile() -> Result(String, Nil) {
 }
 
 pub fn log_level() {
-  envoy.get("log_level")
-  |> result.try(fn(level) {
-    case level {
-      "emergency" -> Ok(logging.Emergency)
-      "alert" -> Ok(logging.Alert)
-      "critical" -> Ok(logging.Critical)
-      "error" -> Ok(logging.Error)
-      "warning" -> Ok(logging.Warning)
-      "notice" -> Ok(logging.Notice)
-      "info" -> Ok(logging.Info)
-      "debug" -> Ok(logging.Debug)
-      _ -> Error(Nil)
-    }
-  })
+  case envoy.get("log_level") {
+    Ok("emergency") -> Ok(logging.Emergency)
+    Ok("alert") -> Ok(logging.Alert)
+    Ok("critical") -> Ok(logging.Critical)
+    Ok("error") -> Ok(logging.Error)
+    Ok("warning") -> Ok(logging.Warning)
+    Ok("notice") -> Ok(logging.Notice)
+    Ok("info") -> Ok(logging.Info)
+    Ok("debug") -> Ok(logging.Debug)
+    _ -> Error(Nil)
+  }
 }
 
 pub fn log_tz_offset() -> Result(duration.Duration, Nil) {
