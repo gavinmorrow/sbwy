@@ -9,7 +9,9 @@ start-server:
 
 [working-directory: 'server']
 start-prof:
-    gleam run -m server_prof
+    # Set these env vars here to override .env file
+    # the [env()] attribute doesn't seem to override
+    https_port=3000 http_port=3003 gleam run -m server_prof
 
 # TODO: automate this somehow?
 # also maybe move into submodules
