@@ -1,3 +1,4 @@
+import eflame
 import gleam/erlang/process
 import gleam/float
 import gleam/http/request
@@ -29,7 +30,6 @@ import subway_gleam/server/route/train
 import subway_gleam/server/sse_gtfs.{sse_gtfs}
 import subway_gleam/server/state
 import subway_gleam/server/state/gtfs_store
-import subway_gleam/server/tprof
 import subway_gleam/shared/route/stop as shared_stop
 import subway_gleam/shared/route/train as shared_train
 
@@ -181,12 +181,12 @@ fn handler(state: state.State, req: wisp.Request) -> wisp.Response {
     ["map"] -> route.map(req)
     ["stops"] ->
       case env.profile_pages() |> list.contains("stops") {
-        True -> tprof.tprof(fn() { route.stops(req, state) })
+        True -> eflame.profile("stops", fn() { route.stops(req, state) })
         False -> route.stops(req, state)
       }
     ["stop", stop_id] ->
       case env.profile_pages() |> list.contains("stop") {
-        True -> tprof.tprof(fn() { route.stop(req, state, stop_id) })
+        True -> eflame.profile("stop", fn() { route.stop(req, state, stop_id) })
         False -> route.stop(req, state, stop_id)
       }
     ["stop", _stop_id, "alerts"] ->
@@ -196,14 +196,15 @@ fn handler(state: state.State, req: wisp.Request) -> wisp.Response {
     ["stop", stop_id, "alerts", route_id] ->
       case env.profile_pages() |> list.contains("stop_alerts") {
         True ->
-          tprof.tprof(fn() {
+          eflame.profile("stop_alerts", fn() {
             route.stop_alerts(req, state, stop_id, option.Some(route_id))
           })
         False -> route.stop_alerts(req, state, stop_id, option.Some(route_id))
       }
     ["train", train_id] ->
       case env.profile_pages() |> list.contains("train") {
-        True -> tprof.tprof(fn() { route.train(req, state, train_id) })
+        True ->
+          eflame.profile("train", fn() { route.train(req, state, train_id) })
         False -> route.train(req, state, train_id)
       }
     ["line", route_id] -> route.line(req, state, route_id)
