@@ -75,10 +75,12 @@ pub fn start(sleeping_after sleep_after_ms: Result(Int, Nil)) -> Nil {
   let assert Ok(gtfs_store) = gtfs_store.new()
   let assert Ok(tz_db) = tzif.load_from_os()
   let state = state.State(priv_dir:, schedule:, gtfs_store:, tz_db:)
+  let state = state.ref(from: state)
 
   log.debug("Setup initial state.", with: log.new_context())
 
   repeatedly.call(10 * 1000, Nil, fn(_state, _i) {
+    let state = state.get(state)
     gtfs_store.update(state.gtfs_store)
   })
 
@@ -134,20 +136,21 @@ pub fn start(sleeping_after sleep_after_ms: Result(Int, Nil)) -> Nil {
 // they go in the wisp handler. Otherwise, they go here.
 fn mist_handler(
   req: request.Request(mist.Connection),
-  state: state.State,
+  state_ref: state.Ref,
   wisp_handler: fn(request.Request(mist.Connection)) ->
     response.Response(mist.ResponseData),
 ) -> response.Response(mist.ResponseData) {
   use <- log.time("mist_handler")
+  let state = state.get(state_ref)
   case request.path_segments(req) {
     // TODO: figure out some abstraction for this. also move out of this file
     ["stop", stop_id, "model_stream"] ->
-      sse_gtfs(req, state, fn() {
+      sse_gtfs(req, state_ref, fn() {
         stop.model(state, stop_id, option.None)
         |> result.map(shared_stop.model_to_json)
       })
     ["train", train_id, "model_stream"] ->
-      sse_gtfs(req, state, fn() {
+      sse_gtfs(req, state_ref, fn() {
         train.model(state, train_id, req.query)
         |> result.map(shared_train.model_to_json)
       })
@@ -159,10 +162,12 @@ fn mist_handler(
   }
 }
 
-fn handler(state: state.State, req: wisp.Request) -> wisp.Response {
+fn handler(state: state.Ref, req: wisp.Request) -> wisp.Response {
   use <- log.time("wisp_handler")
   use <- wisp.rescue_crashes
   use req <- wisp.csrf_known_header_protection(req)
+
+  let state = state.get(state)
 
   use <- wisp.serve_static(req, under: "/static", from: state.priv_dir)
 

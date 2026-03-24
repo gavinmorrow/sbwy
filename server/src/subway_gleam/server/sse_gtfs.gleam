@@ -12,7 +12,7 @@ import subway_gleam/server/state/gtfs_store
 
 pub fn sse_gtfs(
   req: request.Request(mist.Connection),
-  state: state.State,
+  state: state.Ref,
   model: fn() -> Result(json.Json, anyerror),
 ) -> response.Response(mist.ResponseData) {
   use req, context <- log.request(req)
@@ -23,6 +23,7 @@ pub fn sse_gtfs(
       // Prevent nginx from buffering SSE responses
       |> response.set_header("X-Accel-Buffering", "no"),
     init: fn(self) {
+      let state = state.get(state)
       gtfs_store.subscribe_watcher(self, to: state.gtfs_store)
       log.debug("Subscribed to gtfs store.", with: context)
       Ok(actor.initialised(self))
@@ -51,6 +52,7 @@ pub fn sse_gtfs(
             "Failed to send model: connection closed; unsubscribing from gtfs store.",
             with: context,
           )
+          let state = state.get(state)
           gtfs_store.unsubscribe_watcher(self, from: state.gtfs_store)
           actor.stop()
         }
