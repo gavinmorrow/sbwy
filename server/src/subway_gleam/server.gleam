@@ -3,13 +3,13 @@ import gleam/float
 import gleam/http/request
 import gleam/http/response
 import gleam/int
+import gleam/list
 import gleam/option
 import gleam/result
+import gleam/string
 import logging
 import mist
 import repeatedly
-import subway_gleam/server/log
-import subway_gleam/server/tprof
 import tzif/database as tzif
 import wisp
 import wisp/wisp_mist
@@ -19,6 +19,7 @@ import subway_gleam/gtfs/st
 import subway_gleam/gtfs/st/schedule_sample
 import subway_gleam/server/env
 import subway_gleam/server/gtfs/fetch_st
+import subway_gleam/server/log
 import subway_gleam/server/normalize_path_trailing_slash.{
   normalize_path_trailing_slash,
 }
@@ -28,6 +29,7 @@ import subway_gleam/server/route/train
 import subway_gleam/server/sse_gtfs.{sse_gtfs}
 import subway_gleam/server/state
 import subway_gleam/server/state/gtfs_store
+import subway_gleam/server/tprof
 import subway_gleam/shared/route/stop as shared_stop
 import subway_gleam/shared/route/train as shared_train
 
@@ -41,7 +43,24 @@ pub fn start(sleeping_after sleep_after_ms: Result(Int, Nil)) -> Nil {
   wisp.configure_logger()
   configure_logger()
 
-  log.notice("Starting sbwy...", with: log.new_context())
+  log.notice(
+    "Starting sbwy...",
+    with: log.context([
+      #("local_gtfs_st", gtfs_env.use_local_st() |> string.inspect),
+      #("local_gtfs_rt", gtfs_env.use_local_rt() |> string.inspect),
+      #("save_fetched_st", gtfs_env.save_fetched_st() |> string.inspect),
+      #("save_fetched_rt", gtfs_env.save_fetched_rt() |> string.inspect),
+      #("gtfs_rt_fetch_time", gtfs_env.rt_time() |> string.inspect),
+      #("host", env.host()),
+      #("http_port", env.http_port() |> string.inspect),
+      #("https_port", env.https_port() |> string.inspect),
+      #("certfile", env.certfile() |> string.inspect),
+      #("keyfile", env.keyfile() |> string.inspect),
+      #("log_level", env.log_level() |> string.inspect),
+      #("log_tz_offset", env.log_tz_offset() |> string.inspect),
+      #("profile_pages", env.profile_pages() |> string.inspect),
+    ]),
+  )
 
   let assert Ok(priv_dir) = wisp.priv_directory("subway_gleam")
   let assert Ok(schedule) = {
@@ -160,20 +179,33 @@ fn handler(state: state.State, req: wisp.Request) -> wisp.Response {
   case wisp.path_segments(req) {
     [] -> route.index(req)
     ["map"] -> route.map(req)
-    ["stops"] -> route.stops(req, state)
-    ["stop", stop_id] -> {
-      case env.profile_stop_page() {
+    ["stops"] ->
+      case env.profile_pages() |> list.contains("stops") {
+        True -> tprof.tprof(fn() { route.stops(req, state) })
+        False -> route.stops(req, state)
+      }
+    ["stop", stop_id] ->
+      case env.profile_pages() |> list.contains("stop") {
         True -> tprof.tprof(fn() { route.stop(req, state, stop_id) })
         False -> route.stop(req, state, stop_id)
       }
-    }
     ["stop", _stop_id, "alerts"] ->
       // slightly hacky, but this works b/c if the route is unrecognized, then
       // it'll show the alerts for all routes.
       wisp.permanent_redirect(to: req.path <> "all/")
     ["stop", stop_id, "alerts", route_id] ->
-      route.stop_alerts(req, state, stop_id, option.Some(route_id))
-    ["train", train_id] -> route.train(req, state, train_id)
+      case env.profile_pages() |> list.contains("stop_alerts") {
+        True ->
+          tprof.tprof(fn() {
+            route.stop_alerts(req, state, stop_id, option.Some(route_id))
+          })
+        False -> route.stop_alerts(req, state, stop_id, option.Some(route_id))
+      }
+    ["train", train_id] ->
+      case env.profile_pages() |> list.contains("train") {
+        True -> tprof.tprof(fn() { route.train(req, state, train_id) })
+        False -> route.train(req, state, train_id)
+      }
     ["line", route_id] -> route.line(req, state, route_id)
     _ -> route.not_found(req)
   }

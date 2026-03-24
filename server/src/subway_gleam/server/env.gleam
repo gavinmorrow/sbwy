@@ -1,6 +1,7 @@
 import envoy
 import gleam/int
 import gleam/result
+import gleam/string
 import gleam/time/duration
 import logging
 
@@ -49,6 +50,6 @@ pub fn log_tz_offset() -> Result(duration.Duration, Nil) {
   |> result.map(duration.hours)
 }
 
-pub fn profile_stop_page() -> Bool {
-  envoy.get("profile_stop_page") == Ok("true")
+pub fn profile_pages() -> List(String) {
+  envoy.get("profile_pages") |> result.unwrap(or: "") |> string.split(on: ",")
 }
