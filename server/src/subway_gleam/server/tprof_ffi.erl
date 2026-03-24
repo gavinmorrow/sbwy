@@ -1,8 +1,7 @@
--module(eprof_ffi).
--export([eprof/1]).
+-module(tprof_ffi).
+-export([tprof/1]).
 
-eprof(F) ->
-    {ok, Result} = eprof:profile(F),
-    ok = eprof:log("sbwy.log"),
-    eprof:analyze(),
+tprof(F) ->
+    {Result, Data} = tprof:profile(F, #{type => call_time, report => return}),
+    tprof:format(tprof:inspect(Data)),
     Result.

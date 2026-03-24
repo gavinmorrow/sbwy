@@ -8,8 +8,8 @@ import gleam/result
 import logging
 import mist
 import repeatedly
-import subway_gleam/server/eprof
 import subway_gleam/server/log
+import subway_gleam/server/tprof
 import tzif/database as tzif
 import wisp
 import wisp/wisp_mist
@@ -163,7 +163,7 @@ fn handler(state: state.State, req: wisp.Request) -> wisp.Response {
     ["stops"] -> route.stops(req, state)
     ["stop", stop_id] -> {
       case env.profile_stop_page() {
-        True -> eprof.eprof(fn() { route.stop(req, state, stop_id) })
+        True -> tprof.tprof(fn() { route.stop(req, state, stop_id) })
         False -> route.stop(req, state, stop_id)
       }
     }
