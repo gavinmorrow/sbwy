@@ -3,6 +3,7 @@
   --color-bg-1: oklch(from var(--color-bg-0) 0.2 c h);
   --color-bg-btn-highlight: oklch(from var(--color-bg-1) 0.3 c h);
   --color-bg-row-highlight: oklch(from var(--color-bg-1) 0.4 c h);
+  --color-bg-row-active: var(--color-bg-1);
   --color-text: #eee;
 
   --color-bg-alert-orange: oklch(0.7 0.15 64);
@@ -96,8 +97,16 @@ body {
       --li-normal-color-bg: var(--color-bg-row-highlight);
     }
 
-    &:active {
-      --li-normal-color-bg: var(--color-bg-row-highlight);
+    /* On mobile Safari, :active essentially never happens for links.
+     * This property is what is used instead.
+     * See <https://stackoverflow.com/a/33681490/15920018> */
+    -webkit-tap-highlight-color: var(--color-bg-row-active);
+    @supports not (-webkit-tap-highlight-color: var(--color-bg-row-active)) {
+      &:active {
+        --li-normal-color-bg: var(--color-bg-row-active);
+        /* Emulates the -webkit-tap-highlight-color effect */
+        opacity: 0.5;
+      }
     }
 
     box-sizing: border-box;
