@@ -91,6 +91,12 @@ body {
 
     background-color: var(--li-color-bg);
     &.highlight {
+      /* TODO: show highlight differently from active */
+      /* TODO: constrast between highlight bg and headsign is too low */
+      --li-normal-color-bg: var(--color-bg-row-highlight);
+    }
+
+    &:active {
       --li-normal-color-bg: var(--color-bg-row-highlight);
     }
 
