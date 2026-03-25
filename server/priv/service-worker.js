@@ -35,7 +35,7 @@ self.addEventListener("fetch", (event) => {
 
   const disallowsCache =
     url.pathname.includes("model_stream") ||
-    url.pathname.includes("service-worker");
+    url.pathname === "/static/service-worker.js";
 
   if (!allowsCache || disallowsCache) return;
 
