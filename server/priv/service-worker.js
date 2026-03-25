@@ -2,12 +2,14 @@ const CACHE_NAME = "sbwy-v1";
 const getCache = async () => caches.open(CACHE_NAME);
 
 const STATIC_PATHS = [
-  "stop.js",
-  "stops.js",
-  "style.css",
-  "train.js",
-  "icons/192.png",
-  "icons/512.png",
+  "/",
+  "/stops/",
+  "/static/stop.js",
+  "/static/stops.js",
+  "/static/style.css",
+  "/static/train.js",
+  "/static/icons/192.png",
+  "/static/icons/512.png",
 ];
 const cacheStaticResources = async () => {
   const cache = await getCache();
@@ -15,8 +17,6 @@ const cacheStaticResources = async () => {
 };
 self.addEventListener("install", (event) => {
   event.waitUntil(cacheStaticResources());
-  // TODO: find a way to cache templates.
-  event.waitUntil(cache.add("/stops"));
 });
 
 self.addEventListener("activate", (event) => {
@@ -27,12 +27,17 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
-  if (
-    !url.pathname.startsWith("/static") ||
+
+  const allowsCache =
+    url.pathname.startsWith("/static") ||
+    url.pathname === "/" ||
+    url.pathname === "/stops/";
+
+  const disallowsCache =
     url.pathname.includes("model_stream") ||
-    url.pathname.includes("service-worker")
-  )
-    return;
+    url.pathname.includes("service-worker");
+
+  if (!allowsCache || disallowsCache) return;
 
   event.respondWith(handleRequest(event.request));
 });
