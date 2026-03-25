@@ -55,7 +55,7 @@ fn stop_li(stop: st.Stop(direction)) -> element.Element(msg) {
     parent_station: _,
   ) = stop
 
-  let url = "/stop/" <> st.stop_id_to_string(id, direction: option.None)
+  let url = "/stop/" <> st.stop_id_to_string(id, direction: option.None) <> "/"
 
   html.li([], [html.a([attribute.href(url)], [html.text(name)])])
 }

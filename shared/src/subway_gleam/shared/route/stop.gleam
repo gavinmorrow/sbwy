@@ -70,7 +70,7 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
       let st.StopId(id) = transfer.destination
 
       html.a(
-        [attribute.class("bullet-group"), attribute.href("/stop/" <> id)],
+        [attribute.class("bullet-group"), attribute.href("/stop/" <> id <> "/")],
         routes,
       )
     })
@@ -110,7 +110,7 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
     ]),
     html.aside([], [html.text("Transfer to:"), ..transfers]),
     html.aside([], [
-      html.a([attribute.href("./alerts")], [
+      html.a([attribute.href("./alerts/")], [
         alerted_routes,
         html.text(alert_summary),
       ]),

@@ -15,7 +15,7 @@ pub fn index(req: wisp.Request) -> wisp.Response {
 
   let body = [
     html.p([], [html.text("subways! yay!")]),
-    html.a([attribute.href("/stops")], [html.text("stops nearby")]),
+    html.a([attribute.href("/stops/")], [html.text("stops nearby")]),
     navbar(),
   ]
   let res = wisp.response(200)

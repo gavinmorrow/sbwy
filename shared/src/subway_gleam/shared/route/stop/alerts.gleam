@@ -45,7 +45,10 @@ pub fn view(model: Model) -> Element(msg) {
         let route_id = st.route_to_long_id(route.id)
         let bullet = route_bullet.from_route_data(route)
         html.a(
-          [attribute.class("bullet-group"), attribute.href("../" <> route_id)],
+          [
+            attribute.class("bullet-group"),
+            attribute.href("../" <> route_id <> "/"),
+          ],
           [route_bullet(bullet)],
         )
       })
@@ -54,7 +57,7 @@ pub fn view(model: Model) -> Element(msg) {
       html.a(
         [
           attribute.class("bullet-group"),
-          attribute.href("../all"),
+          attribute.href("../all/"),
         ],
         [html.text("All")],
       ),

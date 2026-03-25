@@ -301,7 +301,7 @@ fn arrival_li(
             st.stop_id_to_string(update.stop_id, option.Some(update.direction)),
           ),
         ])
-      "/train/" <> id <> "?" <> query
+      "/train/" <> id <> "/?" <> query
     })
     |> option.unwrap(or: "")
 

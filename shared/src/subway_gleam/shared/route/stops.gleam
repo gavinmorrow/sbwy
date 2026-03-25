@@ -101,7 +101,7 @@ fn stop_li(
   routes: List(route_bullet.RouteBullet),
 ) -> #(String, element.Element(msg)) {
   let id = stop.id |> st.stop_id_to_string(option.None)
-  let url = "/stop/" <> id
+  let url = "/stop/" <> id <> "/"
   let routes =
     list.map(routes, route_bullet.route_bullet)
     |> html.div([], _)
