@@ -63,6 +63,7 @@ fn to_html(lustre_res: LustreRes(msg)) -> element.Element(msg) {
         [
           attribute.src("/static/register-service-worker.js"),
           attribute.type_("module"),
+          attribute.attribute("defer", ""),
         ],
         "",
       ),
