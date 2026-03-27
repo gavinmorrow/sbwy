@@ -48,3 +48,16 @@ when needed.
 | `save_fetched_st` | If "true": write fetched st data to disk.         |
 | `save_fetched_rt` | If "true": write fetched rt data to disk.         |
 | `gtfs_rt_fetch_time` | The unix time in sec the cached rt was fetched at. |
+| `log_level`       | The minimum log level to show. Defaults to all.   |
+| `log_tz_offset`   | The offset (in hours) from GMT the log timestamps are in. |
+| `profile_pages`   | Which pages to enable eflame profiling for.       |
+
+#### Log Levels
+
+This project uses the Erlang logger. The levels are
+emergency/alert/critical/error/warning/notice/info/debug.
+
+#### Profiling
+
+For `profile_pages`, it is a comma-separated list with potential values of:
+`stops`, `stop`, `stop_alerts`, and `train`.
