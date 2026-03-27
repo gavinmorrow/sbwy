@@ -243,7 +243,7 @@ body {
   box-sizing: border-box;
   /* TODO: removing this breaks firefox desktop (and maybe safari desktop) but
   *        fixes safari mobile?? unclear how safari desktop behaves */
-  padding-top: 0.1em;
+  /* padding-top: 0.1em; */
   width: var(--bullet-size);
   height: 1lh;
 
