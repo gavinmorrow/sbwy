@@ -30,6 +30,12 @@ pub fn index(req: wisp.Request) -> wisp.Response {
   #(Body(body:), res)
 }
 
+pub fn health(_req: wisp.Request) -> wisp.Response {
+  wisp.ok()
+  |> wisp.set_header("cache-control", "no-cache")
+  |> wisp.set_body(wisp.Text("200 OK"))
+}
+
 pub fn not_found(req: wisp.Request) -> wisp.Response {
   use _req <- lustre_res(req)
 
