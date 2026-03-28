@@ -17,7 +17,7 @@ start-prof:
 start-stop-prof:
     # Set these env vars here to override .env file
     # the [env()] attribute doesn't seem to override
-    profile_pages="stops,stop,stop_alerts,train" https_port=3000 http_port=3003 gtfs_st="local" gleam run -m subway_gleam/server
+    profile_pages="stops,stop,stop_alerts,train" http_port=3000 gtfs_st="local" gleam run -m subway_gleam/server
 
 # TODO: automate this somehow?
 # also maybe move into submodules
