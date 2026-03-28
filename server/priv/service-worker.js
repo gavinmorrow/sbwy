@@ -3,6 +3,7 @@ const getCache = async () => caches.open(CACHE_NAME);
 
 const STATIC_PATHS = [
   "/",
+  "/stops",
   "/stops/",
   "/static/stop.js",
   "/static/stops.js",
@@ -31,6 +32,7 @@ self.addEventListener("fetch", (event) => {
   const allowsCache =
     url.pathname.startsWith("/static") ||
     url.pathname === "/" ||
+    url.pathname === "/stops" ||
     url.pathname === "/stops/";
 
   const disallowsCache =
