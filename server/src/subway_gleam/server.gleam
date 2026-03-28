@@ -184,6 +184,7 @@ fn handler(state: state.Ref, req: wisp.Request) -> wisp.Response {
   case wisp.path_segments(req) {
     [] -> route.index(req)
     ["health"] -> route.health(req)
+    ["favicon.ico"] -> wisp.redirect(to: "/static/icons/192.png")
     ["map"] -> route.map(req)
     ["stops"] ->
       case env.profile_pages() |> list.contains("stops") {

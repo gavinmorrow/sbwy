@@ -53,7 +53,7 @@ fn to_html(lustre_res: LustreRes(msg)) -> element.Element(msg) {
       ]),
       html.link([
         attribute.rel("icon"),
-        attribute.href("/static/icons/512.png"),
+        attribute.href("/static/icons/192.png"),
       ]),
       html.link([
         attribute.rel("manifest"),
