@@ -12,6 +12,6 @@
       "type": "image/png"
     }
   ],
-  "start_url": "/stops",
+  "start_url": "/stops/",
   "display": "minimal-ui"
 }
