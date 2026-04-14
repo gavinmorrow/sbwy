@@ -4,12 +4,6 @@
 
 % TODO: figure out how to pass in level or smth
 configure_level_info() ->
-    logger:update_primary_config(#{
-        level => info,
-        filters => [{progress, {fun logger_filters:progress/2, stop}}]
-    }).
+    logger:update_primary_config(#{level => info}).
 configure_level_all() ->
-    logger:update_primary_config(#{
-        level => all,
-        filters => [{progress, {fun logger_filters:progress/2, stop}}]
-    }).
+    logger:update_primary_config(#{level => all}).
