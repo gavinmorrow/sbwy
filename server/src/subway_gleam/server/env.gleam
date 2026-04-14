@@ -53,3 +53,7 @@ pub fn log_tz_offset() -> Result(duration.Duration, Nil) {
 pub fn profile_pages() -> List(String) {
   envoy.get("profile_pages") |> result.unwrap(or: "") |> string.split(on: ",")
 }
+
+pub fn profile_funcs() -> Bool {
+  envoy.get("profile_funcs") == Ok("true")
+}

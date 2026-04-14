@@ -1,3 +1,4 @@
+import gleam/bool
 import gleam/dict
 import gleam/http
 import gleam/http/request.{type Request, Request}
@@ -133,6 +134,8 @@ pub fn request(
 }
 
 pub fn time(name: String, fun: fn() -> anything) -> anything {
+  use <- bool.lazy_guard(when: !env.profile_funcs(), return: fun)
+
   let start = timestamp.system_time()
 
   let res = fun()

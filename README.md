@@ -51,6 +51,7 @@ when needed.
 | `log_level`       | The minimum log level to show. Defaults to all.   |
 | `log_tz_offset`   | The offset (in hours) from GMT the log timestamps are in. |
 | `profile_pages`   | Which pages to enable eflame profiling for.       |
+| `profile_funcs`   | If `true`, log the duration of certain functions. |
 
 #### Log Levels
 
