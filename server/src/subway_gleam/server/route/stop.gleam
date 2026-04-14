@@ -194,8 +194,7 @@ pub fn filter_alerts(
 
       let after_start = case period.start {
         option.Some(start) -> {
-          let start =
-            util.timestamp_subtract(start, alert.display_before_active)
+          let start = timestamp.subtract(start, alert.display_before_active)
           timestamp.compare(start, current_time) != order.Gt
         }
         option.None -> True

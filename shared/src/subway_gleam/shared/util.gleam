@@ -22,12 +22,3 @@ pub fn min_from(
   |> result.unwrap(0.0)
   |> float.round
 }
-
-// See <https://github.com/gleam-lang/time/issues/41>
-pub fn timestamp_subtract(
-  timestamp: timestamp.Timestamp,
-  duration: duration.Duration,
-) -> timestamp.Timestamp {
-  let negated_duration = duration.difference(duration, duration.seconds(0))
-  timestamp.add(timestamp, negated_duration)
-}
