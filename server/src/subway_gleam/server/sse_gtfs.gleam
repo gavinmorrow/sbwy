@@ -26,7 +26,7 @@ pub fn sse_gtfs(
       let state = state.get(state)
       gtfs_store.subscribe_watcher(self, to: state.gtfs_store)
       log.debug("Subscribed to gtfs store.", with: context)
-      Ok(actor.initialised(self))
+      self
     },
     loop: fn(self: process.Subject(Nil), _msg: Nil, conn: mist.SSEConnection) -> actor.Next(
       process.Subject(Nil),
