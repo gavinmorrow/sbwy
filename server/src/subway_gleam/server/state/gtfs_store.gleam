@@ -31,7 +31,8 @@ pub fn get(from store: GtfsStore) -> Data {
 
 pub fn update(store: GtfsStore) -> Nil {
   log.debug("Starting gtfs rt update...", with: log.new_context())
-  process.spawn(fn() {
+  // If this process crashes it shouldn't take down the main process
+  process.spawn_unlinked(fn() {
     use data <- result.map(fetch_all_rt_feeds())
     // Update data
     booklet.set(store.data, to: data)
