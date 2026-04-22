@@ -154,7 +154,10 @@ pub fn stop_li(
           attribute.classes([#("highlight", is_highlighted)]),
         ],
         [
-          html.span([], [html.text(name), ..transfers]),
+          html.span([attribute.class("name")], [
+            html.text(name),
+            html.span([attribute.class("transfers")], transfers),
+          ]),
           arrival_time.arrival_time(arriving_at: time, cur_time:),
         ],
       ),

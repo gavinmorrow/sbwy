@@ -72,6 +72,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
+    gap: 0.25em;
 
     /*
      * The animation always runs. When the flash is not actually happening, the
@@ -128,6 +129,27 @@ body {
       /* Don't let the bg color from arrival times go above */
       position: relative;
       z-index: 100;
+    }
+    .name {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25em;
+    }
+    .transfers {
+      display: inline flex;
+      flex-wrap: wrap;
+      /* TODO: this feels messy */
+      gap: calc(var(--padding) / 2);
+      margin-top: calc(var(--padding) * 1 / -8);
+      margin-left: calc(var(--padding) / 4);
+      .route-bullet {
+        font-size: calc(1em / 1.5);
+        margin-top: calc(var(--padding) * 3 / 4);
+        margin-left: calc(var(--padding) / -4);
+      }
+    }
+    .arrival-time {
+      flex-shrink: 0;
     }
 
     margin: var(--margin) 0;
