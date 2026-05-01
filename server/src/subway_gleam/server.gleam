@@ -208,11 +208,11 @@ fn handler(state: state.Ref, req: wisp.Request) -> wisp.Response {
           })
         False -> route.stop_alerts(req, state, stop_id, option.Some(route_id))
       }
-    ["train", train_id] ->
+    ["train", trip_id] ->
       case env.profile_pages() |> list.contains("train") {
         True ->
-          eflame.profile("train", fn() { route.train(req, state, train_id) })
-        False -> route.train(req, state, train_id)
+          eflame.profile("train", fn() { route.train(req, state, trip_id) })
+        False -> route.train(req, state, trip_id)
       }
     ["line", route_id] -> route.line(req, state, route_id)
     _ -> route.not_found(req)

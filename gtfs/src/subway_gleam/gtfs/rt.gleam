@@ -20,7 +20,7 @@ pub type Data {
   Data(
     arrivals: dict.Dict(st.StopId, List(TrainStopping)),
     final_stops: dict.Dict(st.ShapeId, #(st.StopId, st.Direction)),
-    trips: dict.Dict(TrainId, List(TrainStopping)),
+    trips: dict.Dict(TripId, List(TrainStopping)),
     alerts: List(Alert),
   )
 }
@@ -62,13 +62,13 @@ pub type TrainStopping {
   )
 }
 
-pub type TrainId {
-  TrainId(String)
+pub type TripId {
+  TripId(String)
 }
 
-pub fn train_id_to_string(train_id: TrainId) -> String {
-  let TrainId(train_id) = train_id
-  train_id
+pub fn trip_id_to_string(trip_id: TripId) -> String {
+  let TripId(trip_id) = trip_id
+  trip_id
 }
 
 pub type Alert {
@@ -203,15 +203,12 @@ pub fn analyze(raw: gtfs_rt_nyct.FeedMessage) -> Data {
         let new_arrivals = parse_trip_update(trip, stop_time_updates)
         let final_stop = list.last(new_arrivals)
 
-        let train_id = trip.nyct.train_id |> option.map(TrainId)
         let trips =
-          train_id
-          |> option.map(dict.insert(
+          dict.insert(
             into: acc.trips,
-            for: _,
+            for: TripId(trip.trip_id),
             insert: new_arrivals,
-          ))
-          |> option.unwrap(or: acc.trips)
+          )
         let acc = Data(..acc, trips:)
 
         list.fold(over: new_arrivals, from: acc, with: fn(acc, train_stopping) {

@@ -71,8 +71,7 @@ pub fn model(
     |> result.try(uri.parse_query)
     |> result.unwrap(or: [])
     |> list.key_find("train_id")
-    |> result.try(uri.percent_decode)
-    |> result.map(rt.TrainId)
+    |> result.map(rt.TripId)
     |> option.from_result
 
   use stop_id <- result.try(
@@ -283,28 +282,16 @@ fn arrival_li(
     })
   }
 
-  let train_id_percent_encode =
-    update.trip.nyct.train_id
-    |> option.map(uri.percent_encode)
-    |> option.map(
-      // uri.percent_encode doesn't encode pluses
-      string.replace(_, each: "+", with: "%2B"),
-    )
-  let train_url =
-    train_id_percent_encode
-    |> option.map(fn(id) {
-      let query =
-        uri.query_to_string([
-          #(
-            "stop_id",
-            st.stop_id_to_string(update.stop_id, option.Some(update.direction)),
-          ),
-        ])
-      "/train/" <> id <> "/?" <> query
-    })
-    |> option.unwrap(or: "")
+  let query =
+    uri.query_to_string([
+      #(
+        "stop_id",
+        st.stop_id_to_string(update.stop_id, option.Some(update.direction)),
+      ),
+    ])
+  let train_url = "/train/" <> update.trip.trip_id <> "/?" <> query
 
-  let train_id = update.trip.nyct.train_id |> option.map(rt.TrainId)
+  let train_id = rt.TripId(update.trip.trip_id)
 
   // TODO: what to do here?? try to get rid of assert.
   let assert Ok(route_id) = st.parse_route(trip.route_id)

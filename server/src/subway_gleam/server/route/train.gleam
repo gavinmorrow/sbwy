@@ -4,7 +4,6 @@ import gleam/option
 import gleam/pair
 import gleam/result
 import gleam/set
-import gleam/string
 import gleam/time/timestamp
 import gleam/uri
 import lustre/attribute
@@ -15,7 +14,7 @@ import wisp
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
 import subway_gleam/server/hydration_scripts.{hydration_scripts}
-import subway_gleam/server/lustre_middleware.{Body, Document, try_lustre_res}
+import subway_gleam/server/lustre_middleware.{Document, try_lustre_res}
 import subway_gleam/server/state
 import subway_gleam/server/state/gtfs_store
 import subway_gleam/server/time_zone
@@ -26,11 +25,11 @@ import subway_gleam/shared/util/live_status
 pub fn train(
   req: wisp.Request,
   state: state.State,
-  train_id: String,
+  trip_id: String,
 ) -> wisp.Response {
   use req <- try_lustre_res(req)
 
-  case model(state, train_id, req.query) {
+  case model(state, trip_id, req.query) {
     Ok(model) -> {
       let head = [
         hydration_scripts("train", train.model_to_json(model)),
@@ -43,15 +42,14 @@ pub fn train(
 
       Ok(#(Document(head:, body:), wisp.response(200)))
     }
-    Error(InvalidTrainIdEncoding) -> Error(error_invalid_train_id_encoding())
-    Error(CouldNotFindTrain(train_id)) ->
-      Error(error_could_not_find_train(train_id))
+    Error(CouldNotFindTrain(trip_id:)) ->
+      Error(error_could_not_find_train(trip_id))
   }
 }
 
 pub fn model(
   state: state.State,
-  train_id: String,
+  trip_id: String,
   query: option.Option(String),
 ) -> Result(train.Model, Error) {
   // TODO: make this a function?
@@ -67,18 +65,12 @@ pub fn model(
 
   let gtfs_store.Data(current: gtfs, last_updated:) = state.fetch_gtfs(state)
 
-  use train_id <- result.try(
-    uri.percent_decode(train_id)
-    |> result.replace_error(InvalidTrainIdEncoding),
-  )
-  let train_id = rt.TrainId(train_id)
-
+  let trip_id = rt.TripId(trip_id)
   let trip =
-    dict.get(gtfs.trips, train_id)
-    |> result.replace_error({
-      let rt.TrainId(train_id) = train_id
-      CouldNotFindTrain(train_id)
-    })
+    dict.get(gtfs.trips, trip_id)
+    |> result.replace_error(
+      CouldNotFindTrain(trip_id: rt.trip_id_to_string(trip_id)),
+    )
   use stops <- result.try(trip)
 
   let stops =
@@ -91,7 +83,7 @@ pub fn model(
           arrival.stop_id,
           option.Some(arrival.direction),
         )),
-        stop_li(_, arrival.time, train_id, state.schedule),
+        stop_li(_, arrival.time, trip_id, state.schedule),
       )
     })
 
@@ -112,24 +104,16 @@ pub fn model(
 }
 
 pub type Error {
-  InvalidTrainIdEncoding
-  CouldNotFindTrain(train_id: String)
-}
-
-fn error_invalid_train_id_encoding() -> #(
-  lustre_middleware.LustreRes(c),
-  wisp.Response,
-) {
-  #(Body([html.text("Train id URI encoding is invalid.")]), wisp.response(400))
+  CouldNotFindTrain(trip_id: String)
 }
 
 fn error_could_not_find_train(
-  train_id: String,
+  trip_id: String,
 ) -> #(lustre_middleware.LustreRes(d), wisp.Response) {
   #(
     Document(head: [html.title([], "Error: Could not find train")], body: [
       html.p([], [
-        html.text("Could not find train with identifier " <> train_id),
+        html.text("Could not find train with trip id of " <> trip_id),
       ]),
     ]),
     wisp.response(404),
@@ -139,17 +123,13 @@ fn error_could_not_find_train(
 fn stop_li(
   stop: st.Stop(a),
   time: timestamp.Timestamp,
-  train_id: rt.TrainId,
+  trip_id: rt.TripId,
   schedule: st.Schedule,
 ) -> train.Stop {
   let stop_url = {
     let stop_id = stop.id |> st.stop_id_to_string(direction: option.None)
-    let train_id =
-      train_id
-      |> rt.train_id_to_string
-      |> uri.percent_encode
-      // uri.percent_encode doesn't encode pluses
-      |> string.replace(each: "+", with: "%2B")
+    let train_id = rt.trip_id_to_string(trip_id)
+
     let query = uri.query_to_string([#("train_id", train_id)])
     "/stop/" <> stop_id <> "?" <> query
   }

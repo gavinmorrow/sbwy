@@ -1,6 +1,5 @@
 import gleam/bool
 import gleam/dynamic/decode
-import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option
@@ -37,7 +36,7 @@ pub type Model {
     alert_summary: String,
     uptown: List(Arrival),
     downtown: List(Arrival),
-    highlighted_train: option.Option(rt.TrainId),
+    highlighted_train: option.Option(rt.TripId),
     event_source: LiveStatus,
     cur_time: Time,
     is_fav: Bool,
@@ -146,7 +145,7 @@ pub fn model_decoder() -> decode.Decoder(Model) {
   use alert_summary <- decode.field("alert_summary", decode.string)
   use highlighted_train <- decode.field(
     "highlighted_train",
-    decode.optional(decode.string |> decode.map(rt.TrainId)),
+    decode.optional(decode.string |> decode.map(rt.TripId)),
   )
   use uptown <- decode.field("uptown", decode.list(arrival_decoder()))
   use downtown <- decode.field("downtown", decode.list(arrival_decoder()))
@@ -198,7 +197,7 @@ pub fn model_to_json(model: Model) -> json.Json {
     #(
       "highlighted_train",
       json.nullable(from: highlighted_train, of: fn(id) {
-        json.string(rt.train_id_to_string(id))
+        json.string(rt.trip_id_to_string(id))
       }),
     ),
     #("uptown", json.array(uptown, arrival_to_json)),
@@ -229,7 +228,7 @@ fn transfer_to_json(transfer: Transfer) -> json.Json {
 
 pub type Arrival {
   Arrival(
-    train_id: option.Option(rt.TrainId),
+    train_id: rt.TripId,
     train_url: String,
     route: RouteBullet,
     headsign: Result(String, Nil),
@@ -240,7 +239,7 @@ pub type Arrival {
 fn arrival_decoder() -> decode.Decoder(Arrival) {
   use train_id <- decode.field(
     "train_id",
-    decode.optional(decode.string |> decode.map(rt.TrainId)),
+    decode.string |> decode.map(rt.TripId),
   )
   use train_url <- decode.field("train_url", decode.string)
   use route <- decode.field("route", route_bullet.decoder())
@@ -257,12 +256,7 @@ fn arrival_to_json(arrival: Arrival) -> json.Json {
   let Arrival(train_id:, train_url:, route:, headsign:, time:) = arrival
 
   json.object([
-    #(
-      "train_id",
-      json.nullable(from: train_id, of: fn(train_id) {
-        json.string(rt.train_id_to_string(train_id))
-      }),
-    ),
+    #("train_id", json.string(rt.trip_id_to_string(train_id))),
     #("train_url", json.string(train_url)),
     #("route", route_bullet.to_json(route)),
     #("headsign", json.nullable(option.from_result(headsign), of: json.string)),
@@ -272,7 +266,7 @@ fn arrival_to_json(arrival: Arrival) -> json.Json {
 
 fn arrival_li(
   for arrival: Arrival,
-  highlighting highlighted_train: option.Option(rt.TrainId),
+  highlighting highlighted_train: option.Option(rt.TripId),
   at cur_time: Time,
 ) -> Result(#(String, Element(msg)), Nil) {
   let Arrival(train_id:, train_url:, route:, headsign:, time:) = arrival
@@ -286,13 +280,10 @@ fn arrival_li(
       html.span([attribute.class("headsign")], [html.text(headsign)])
     })
 
-  let is_highlighted = train_id == highlighted_train
+  let is_highlighted = option.Some(train_id) == highlighted_train
 
   #(
-    arrival.train_id
-      |> option.map(rt.train_id_to_string)
-      // TODO: is this the right option here
-      |> option.unwrap(int.random(1024) |> int.to_string),
+    rt.trip_id_to_string(arrival.train_id),
     html.li([], [
       html.a(
         [
