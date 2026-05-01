@@ -1,11 +1,25 @@
 set dotenv-load
 set dotenv-required
 
-start: build-client start-server
+check: (server "check") (client "check")
+
+build: (server "build") build-pages
+
+run: build-pages (server "run")
 
 [working-directory: 'server']
-start-server:
-    gleam run -m subway_gleam/server
+server cmd="check":
+    gleam {{cmd}} {{ if cmd == "run" { "-m subway_gleam/server" } else { "" } }}
+
+[working-directory: 'client']
+client cmd="check":
+    gleam {{cmd}}
+
+build-pages: (build-page "stops") (build-page "stop") (build-page "train")
+
+[working-directory: 'client']
+build-page name:
+    gleam run -m lustre/dev build subway_gleam/client/{{name}}
 
 [working-directory: 'server']
 start-prof:
@@ -19,20 +33,3 @@ start-stop-prof:
     # the [env()] attribute doesn't seem to override
     profile_pages="stops,stop,stop_alerts,train" http_port=3000 gtfs_st="local" gleam run -m subway_gleam/server
 
-# TODO: automate this somehow?
-# also maybe move into submodules
-# maybe use make?
-
-build-client: build-stops build-stop build-train
-
-[working-directory: 'client']
-build-stops:
-    gleam run -m lustre/dev build subway_gleam/client/stops
-
-[working-directory: 'client']
-build-stop:
-    gleam run -m lustre/dev build subway_gleam/client/stop
-
-[working-directory: 'client']
-build-train:
-    gleam run -m lustre/dev build subway_gleam/client/train
