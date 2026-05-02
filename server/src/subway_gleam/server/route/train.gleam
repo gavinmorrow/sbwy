@@ -32,6 +32,7 @@ pub fn train(
   case model(state, trip_id, req.query) {
     Ok(model) -> {
       let head = [
+        html.title([], model.route.text <> " to " <> model.headsign),
         hydration_scripts("train", train.model_to_json(model)),
       ]
       let body = [
@@ -73,6 +74,29 @@ pub fn model(
     )
   use #(trip, stops) <- result.try(trip)
 
+  // TODO: use default route bullet instead of panicking
+  let assert Ok(route) = trip.route |> st.parse_route
+  let route =
+    state.schedule |> st.route_data(route) |> route_bullet.from_route_data
+
+  let headsign =
+    {
+      use shape_id <- result.try(rt.parse_shape_id(from: trip.id))
+      case dict.get(state.schedule.trips.headsigns, shape_id) {
+        Ok(headsign) -> Ok(headsign)
+        Error(Nil) -> {
+          // If the headsign isn't in the ST, take the name of the last stop in
+          // the trip
+          use last_stop <- result.try(list.last(stops))
+          use last_stop <- result.map(
+            dict.get(state.schedule.stops, #(last_stop.stop_id, option.None)),
+          )
+          last_stop.name
+        }
+      }
+    }
+    |> result.unwrap(or: "")
+
   let stops =
     list.filter_map(stops, fn(arrival) {
       // If the stop doesn't exist in the stops.txt, it's an internal timepoint
@@ -96,6 +120,8 @@ pub fn model(
 
   Ok(train.Model(
     last_updated:,
+    route:,
+    headsign:,
     stops:,
     highlighted_stop:,
     event_source: live_status.Unavailable,

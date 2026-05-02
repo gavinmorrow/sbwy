@@ -39,6 +39,7 @@ pub fn route_bullet(bullet: RouteBullet) -> element.Element(msg) {
   )
 }
 
+// TODO: make a "default" route bullet, for when there's no data
 pub fn from_route_data(data: st.RouteData) -> RouteBullet {
   // TODO: make this less hacky. maybe pass around separate "diamond express" property?
   // TODO: this fails on the SIR, and would fail if the IBX ever becomes a thing

@@ -42,11 +42,16 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       case json.parse(from: data, using: train.model_decoder()) {
         Ok(Model(
           last_updated:,
+          route:,
+          headsign:,
           stops:,
           highlighted_stop: _,
           event_source: _,
           cur_time: _,
-        )) -> #(Model(..model, last_updated:, stops:), effect.none())
+        )) -> #(
+          Model(..model, last_updated:, route:, headsign:, stops:),
+          effect.none(),
+        )
         Error(_) -> todo as "handle model decode error"
       }
     }

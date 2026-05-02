@@ -24,6 +24,8 @@ import subway_gleam/shared/util/timestamp_json
 pub type Model {
   Model(
     last_updated: Time,
+    route: RouteBullet,
+    headsign: String,
     stops: List(Stop),
     highlighted_stop: option.Option(st.StopId),
     event_source: LiveStatus,
@@ -32,8 +34,15 @@ pub type Model {
 }
 
 pub fn view(model: Model) -> Element(msg) {
-  let Model(last_updated:, stops:, highlighted_stop:, event_source:, cur_time:) =
-    model
+  let Model(
+    last_updated:,
+    route:,
+    headsign:,
+    stops:,
+    highlighted_stop:,
+    event_source:,
+    cur_time:,
+  ) = model
 
   let stops = list.filter_map(stops, stop_li(_, highlighted_stop, cur_time))
 
@@ -44,6 +53,7 @@ pub fn view(model: Model) -> Element(msg) {
   }
 
   html.div([], [
+    html.h1([], [route_bullet(route), html.text(headsign)]),
     html.p([], [
       last_updated.last_updated(at: last_updated, cur_time:),
       html.br([]),
@@ -56,6 +66,8 @@ pub fn view(model: Model) -> Element(msg) {
 
 pub fn model_decoder() -> decode.Decoder(Model) {
   use last_updated <- decode.field("last_updated", time.decoder())
+  use route <- decode.field("route", route_bullet.decoder())
+  use headsign <- decode.field("headsign", decode.string)
   use stops <- decode.field("stops", decode.list(stop_decoder()))
   use highlighted_stop <- decode.field(
     "highlighted_stop",
@@ -65,6 +77,8 @@ pub fn model_decoder() -> decode.Decoder(Model) {
 
   decode.success(Model(
     last_updated:,
+    route:,
+    headsign:,
     stops:,
     highlighted_stop:,
     event_source: live_status.Unavailable,
@@ -75,6 +89,8 @@ pub fn model_decoder() -> decode.Decoder(Model) {
 pub fn model_to_json(model: Model) -> json.Json {
   let Model(
     last_updated:,
+    route:,
+    headsign:,
     stops:,
     highlighted_stop:,
     event_source: _,
@@ -83,6 +99,8 @@ pub fn model_to_json(model: Model) -> json.Json {
 
   json.object([
     #("last_updated", time.to_json(last_updated)),
+    #("route", route_bullet.to_json(route)),
+    #("headsign", json.string(headsign)),
     #("stops", json.array(stops, stop_to_json)),
     #(
       "highlighted_stop",

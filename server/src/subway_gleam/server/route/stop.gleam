@@ -288,7 +288,7 @@ fn arrival_li(
     ])
   let train_url = "/train/" <> rt.trip_id_to_string(trip.id) <> "/?" <> query
 
-  // TODO: what to do here?? try to get rid of assert.
+  // TODO: use default route bullet instead of panicking
   let assert Ok(route) = st.parse_route(trip.route)
   let route =
     schedule |> st.route_data(for: route) |> route_bullet.from_route_data
