@@ -142,12 +142,12 @@ pub fn model(
     |> dict.get(stop_id)
     |> result.unwrap(or: [])
     |> list.sort(by: fn(a, b) {
-      timestamp.compare(a.time, b.time) |> order.negate
+      timestamp.compare(a.1.time, b.1.time) |> order.negate
     })
     |> list.fold(from: #([], []), with: fn(acc, update) {
       let #(uptown_acc, downtown_acc) = acc
       let li = arrival_li(update, state.schedule, gtfs)
-      case update.direction {
+      case update.1.direction {
         st.North -> #([li, ..uptown_acc], downtown_acc)
         st.South -> #(uptown_acc, [li, ..downtown_acc])
       }
@@ -261,14 +261,14 @@ pub fn error_unknown_stop(
 }
 
 fn arrival_li(
-  update: rt.TrainStopping,
+  update: #(rt.Trip, rt.TrainStopping),
   schedule: st.Schedule,
   gtfs: rt.Data,
 ) -> stop.Arrival {
-  let rt.TrainStopping(trip:, time:, stop_id: _, direction: _) = update
+  let #(trip, rt.TrainStopping(time:, stop_id:, direction:)) = update
 
   let headsign = {
-    use shape_id <- result.try(st.parse_shape_id(from: trip.trip_id))
+    use shape_id <- result.try(rt.parse_shape_id(from: trip.id))
     schedule.trips.headsigns
     |> dict.get(shape_id)
     |> result.lazy_or(fn() {
@@ -284,19 +284,14 @@ fn arrival_li(
 
   let query =
     uri.query_to_string([
-      #(
-        "stop_id",
-        st.stop_id_to_string(update.stop_id, option.Some(update.direction)),
-      ),
+      #("stop_id", st.stop_id_to_string(stop_id, option.Some(direction))),
     ])
-  let train_url = "/train/" <> update.trip.trip_id <> "/?" <> query
-
-  let train_id = rt.TripId(update.trip.trip_id)
+  let train_url = "/train/" <> rt.trip_id_to_string(trip.id) <> "/?" <> query
 
   // TODO: what to do here?? try to get rid of assert.
-  let assert Ok(route_id) = st.parse_route(trip.route_id)
+  let assert Ok(route) = st.parse_route(trip.route)
   let route =
-    schedule |> st.route_data(for: route_id) |> route_bullet.from_route_data
+    schedule |> st.route_data(for: route) |> route_bullet.from_route_data
 
-  stop.Arrival(train_id:, train_url:, route:, headsign:, time:)
+  stop.Arrival(train_id: trip.id, train_url:, route:, headsign:, time:)
 }

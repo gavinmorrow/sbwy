@@ -18,9 +18,9 @@ import subway_gleam/gtfs/st
 // TODO: find a better name
 pub type Data {
   Data(
-    arrivals: dict.Dict(st.StopId, List(TrainStopping)),
+    arrivals: dict.Dict(st.StopId, List(#(Trip, TrainStopping))),
     final_stops: dict.Dict(st.ShapeId, #(st.StopId, st.Direction)),
-    trips: dict.Dict(TripId, List(TrainStopping)),
+    trips: dict.Dict(TripId, #(Trip, List(TrainStopping))),
     alerts: List(Alert),
   )
 }
@@ -39,7 +39,11 @@ pub fn data_merge(into a: Data, from b: Data) -> Data {
     dict.combine(a.arrivals, b.arrivals, with: fn(a, b) { list.append(a, b) })
   let final_stops = dict.merge(into: a.final_stops, from: b.final_stops)
   let trips =
-    dict.combine(a.trips, b.trips, with: fn(a, b) { list.append(a, b) })
+    dict.combine(a.trips, b.trips, with: fn(a, b) {
+      let #(a_trip, a_stops) = a
+      let #(b_trip, b_stops) = b
+      #(merge_trips(a_trip, b_trip), list.append(a_stops, b_stops))
+    })
   let alerts = list.append(a.alerts, b.alerts)
 
   Data(arrivals:, final_stops:, trips:, alerts:)
@@ -53,17 +57,31 @@ pub fn data_map_final_stops(data: Data, fun) -> Data {
   Data(..data, final_stops: fun(data.final_stops))
 }
 
+pub type TripId {
+  TripId(String)
+}
+
+pub fn parse_shape_id(from trip_id: TripId) -> Result(st.ShapeId, Nil) {
+  let TripId(trip_id) = trip_id
+  st.parse_shape_id(from: trip_id)
+}
+
+pub type Trip {
+  Trip(id: TripId, route: String)
+}
+
+fn merge_trips(into a: Trip, from b: Trip) {
+  let Trip(id: _, route: _) = a
+  let Trip(id:, route:) = b
+  Trip(id:, route:)
+}
+
 pub type TrainStopping {
   TrainStopping(
-    trip: gtfs_rt_nyct.TripDescriptor,
     time: timestamp.Timestamp,
     stop_id: st.StopId,
     direction: st.Direction,
   )
-}
-
-pub type TripId {
-  TripId(String)
 }
 
 pub fn trip_id_to_string(trip_id: TripId) -> String {
@@ -200,15 +218,16 @@ pub fn analyze(raw: gtfs_rt_nyct.FeedMessage) -> Data {
         Data(..acc, alerts: [alert, ..acc.alerts])
       }
       gtfs_rt_nyct.TripUpdate(trip:, stop_time_updates:) -> {
-        let new_arrivals = parse_trip_update(trip, stop_time_updates)
+        let trip = Trip(id: TripId(trip.trip_id), route: trip.route_id)
+
+        let new_arrivals = parse_trip_update(stop_time_updates)
         let final_stop = list.last(new_arrivals)
 
         let trips =
-          dict.insert(
-            into: acc.trips,
-            for: TripId(trip.trip_id),
-            insert: new_arrivals,
-          )
+          dict.insert(into: acc.trips, for: trip.id, insert: #(
+            trip,
+            new_arrivals,
+          ))
         let acc = Data(..acc, trips:)
 
         list.fold(over: new_arrivals, from: acc, with: fn(acc, train_stopping) {
@@ -219,18 +238,16 @@ pub fn analyze(raw: gtfs_rt_nyct.FeedMessage) -> Data {
                 in: acc.arrivals,
                 update: train_stopping.stop_id,
                 with: fn(cur) {
+                  let arrival = #(trip, train_stopping)
                   case cur {
-                    option.None -> [train_stopping]
-                    option.Some(cur) -> [train_stopping, ..cur]
+                    option.None -> [arrival]
+                    option.Some(cur) -> [arrival, ..cur]
                   }
                 },
               )
             },
             final_stops: {
-              case
-                final_stop,
-                train_stopping.trip.trip_id |> st.parse_shape_id
-              {
+              case final_stop, trip.id |> parse_shape_id {
                 Ok(final_stop), Ok(shape_id) ->
                   dict.insert(into: acc.final_stops, for: shape_id, insert: #(
                     final_stop.stop_id,
@@ -254,7 +271,6 @@ pub fn analyze(raw: gtfs_rt_nyct.FeedMessage) -> Data {
 }
 
 fn parse_trip_update(
-  trip: gtfs_rt_nyct.TripDescriptor,
   stop_time_updates: List(gtfs_rt_nyct.StopTimeUpdate),
 ) -> List(TrainStopping) {
   use acc, stop <- list.fold(over: stop_time_updates |> list.reverse, from: [])
@@ -270,7 +286,7 @@ fn parse_trip_update(
     use #(stop_id, direction) <- result.try(st.parse_stop_id(stop.stop_id))
     use direction <- result.try(direction |> option.to_result(Nil))
 
-    TrainStopping(trip:, time:, stop_id:, direction:)
+    TrainStopping(time:, stop_id:, direction:)
     |> Ok
   }
 
@@ -288,7 +304,8 @@ pub fn routes_arriving(gtfs: Data, at stop: st.StopId) -> set.Set(st.Route) {
     |> result.unwrap(or: [])
 
   list.fold(over: arrivals, from: set.new(), with: fn(acc, arrival) {
-    case st.parse_route(arrival.trip.route_id) {
+    let #(trip, _train_stopping) = arrival
+    case st.parse_route(trip.route) {
       Ok(route) -> set.insert(route, into: acc)
       // If the route is unknown/invalid, don't bother adding it
       // This is best-effort

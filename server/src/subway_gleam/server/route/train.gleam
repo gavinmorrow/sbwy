@@ -71,7 +71,7 @@ pub fn model(
     |> result.replace_error(
       CouldNotFindTrain(trip_id: rt.trip_id_to_string(trip_id)),
     )
-  use stops <- result.try(trip)
+  use #(trip, stops) <- result.try(trip)
 
   let stops =
     list.filter_map(stops, fn(arrival) {
