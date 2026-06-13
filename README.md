@@ -53,6 +53,20 @@ when needed.
 | `profile_pages`   | Which pages to enable eflame profiling for.       |
 | `profile_funcs`   | If `true`, log the duration of certain functions. |
 
+### Extra st data
+
+Some data about stations (e.g. what borough they are in) is semi-manually
+stored. `data.gov` provides it, but the exact format may change slightly every
+so often, making it more unreliable to parse live. Furthermore, this type of data
+changes very very infrequently.
+
+If a station is added or removed to the subway (or the data otherwise changes):
+1. `cd` into the gtfs project
+2. Download the CSV output from
+   <https://catalog.data.gov/dataset/mta-subway-stations-and-complexes> and save
+   it into `./MTA_Subway_Stations_and_Complexes.csv`.
+3. Run `gleam run -m build_st_extra`.
+
 #### Log Levels
 
 This project uses the Erlang logger. The levels are
