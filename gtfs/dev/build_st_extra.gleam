@@ -77,24 +77,25 @@ type ParseError {
 
 /// Converts the data to a gleam module
 fn output(data: List(st_extra.Stop)) -> String {
-  "import gleam/set.{from_list as set}
+  "import gleam/dict
+import gleam/set.{from_list as set}
 
 import subway_gleam/gtfs/st.{
-  A, B, C, D, E, F, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N7, Q, R, S, Sf, Si,
-  Sr, StopId, W, Z,
+  type StopId, A, B, C, D, E, F, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N7, Q, R,
+  S, Sf, Si, Sr, StopId, W, Z,
 }
 import subway_gleam/gtfs/st_extra.{
   type Stop, Bronx, Brooklyn, Manhattan, Queens, StatenIsland, Stop,
 }
 
-pub fn data() -> List(Stop) {
-  [
+pub fn data() -> dict.Dict(StopId, Stop) {
+  dict.from_list([
 " <> {
     data
     |> list.map(fn(stop) { "    " <> output_stop(stop) <> "," })
     |> string.join(with: "\n")
   } <> "
-  ]
+  ])
 }
 "
 }
@@ -150,7 +151,8 @@ fn output_stop(stop: st_extra.Stop) -> String {
     }
     <> "])"
 
-  "Stop(" <> id <> ", " <> borough <> ", " <> daytime_routes <> ")"
+  let stop = "Stop(" <> id <> ", " <> borough <> ", " <> daytime_routes <> ")"
+  "#(" <> id <> ", " <> stop <> ")"
 }
 
 fn stop_decoder() -> decode.Decoder(st_extra.Stop) {
