@@ -26,12 +26,17 @@ pub fn stops(req: wisp.Request, state: state.State) -> wisp.Response {
       }
     })
   let stop_routes =
-    state.schedule.stop_routes
-    |> dict.map_values(fn(_stop_id, routes) {
-      set.map(routes, st.route_data(for: _, in: state.schedule))
-      |> set.to_list
-      |> list.sort(by: st.route_compare)
-      |> list.map(route_bullet.from_route_data)
+    state.schedule.stops
+    // Transform into expected shape
+    |> dict.fold(from: dict.new(), with: fn(acc, stop_id, stop) {
+      let #(stop_id, _direction) = stop_id
+      let routes =
+        set.map(stop.daytime_routes, st.route_data(for: _, in: state.schedule))
+        |> set.to_list
+        |> list.sort(by: st.route_compare)
+        |> list.map(route_bullet.from_route_data)
+
+      dict.insert(routes, into: acc, for: stop_id)
     })
 
   let model =

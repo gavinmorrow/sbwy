@@ -166,9 +166,7 @@ fn stop_li(
     |> result.map(set.to_list)
     |> result.unwrap(or: [])
     |> list.flat_map(fn(transfer) {
-      dict.get(schedule.stop_routes, transfer.destination)
-      |> result.map(set.to_list)
-      |> result.unwrap(or: [])
+      st.daytime_routes(in: schedule, for: transfer.destination) |> set.to_list
     })
     |> list.map(st.route_data(for: _, in: schedule))
     |> list.sort(by: st.route_compare)

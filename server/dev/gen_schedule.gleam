@@ -141,19 +141,20 @@ pub fn main() -> Nil {
       to: path <> "/services.gleam",
       contents: services_prefix <> "pub fn services() {" <> services_str <> "}",
     )
-  let stop_routes_str =
-    string.inspect(schedule.stop_routes)
-    // The ShapeId constructor is opaque, so there's a helper func
-    |> string.replace(each: "ShapeId(", with: "shape_id(")
-    |> string.replace(each: "Set(", with: "set(")
-  let assert Ok(Nil) =
-    simplifile.write(
-      to: path <> "/stop_routes.gleam",
-      contents: stop_routes_prefix
-        <> "pub fn stop_routes() {"
-        <> stop_routes_str
-        <> "}",
-    )
+  // See comment about stop_routes in st.parse
+  // let stop_routes_str =
+  //   string.inspect(schedule.stop_routes)
+  //   // The ShapeId constructor is opaque, so there's a helper func
+  //   |> string.replace(each: "ShapeId(", with: "shape_id(")
+  //   |> string.replace(each: "Set(", with: "set(")
+  // let assert Ok(Nil) =
+  //   simplifile.write(
+  //     to: path <> "/stop_routes.gleam",
+  //     contents: stop_routes_prefix
+  //       <> "pub fn stop_routes() {"
+  //       <> stop_routes_str
+  //       <> "}",
+  //   )
   let transfers_str =
     string.inspect(schedule.transfers)
     // The ShapeId constructor is opaque, so there's a helper func

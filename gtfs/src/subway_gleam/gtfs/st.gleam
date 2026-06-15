@@ -43,7 +43,6 @@ pub type Schedule {
     ),
     trips: Trips,
     services: dict.Dict(Route, Service),
-    stop_routes: dict.Dict(StopId, set.Set(Route)),
     transfers: dict.Dict(StopId, set.Set(Transfer)),
     routes: dict.Dict(Route, RouteData),
   )
@@ -111,7 +110,12 @@ pub fn parse(bits: BitArray) -> Result(Schedule, FetchError) {
     })
 
   use stop_times <- result.try(parse_file("stop_times.txt", stop_time_decoder()))
-  use #(services, stop_routes) <- result.try(
+  // `_stop_routes` is all the trains that are ever scheduled to stop at a
+  // station. That does not always line up with the routes you'd expect to see
+  // on a map. (e.g. there is one R train that terminates at 96th st every day.)
+  //
+  // This may be useful later, so I'm keeping it for now.
+  use #(services, _stop_routes) <- result.try(
     parse_stop_times(trips, stop_times, dict.new(), dict.new())
     |> result.replace_error(InvalidStopTimes),
   )
@@ -129,7 +133,7 @@ pub fn parse(bits: BitArray) -> Result(Schedule, FetchError) {
       dict.insert(route, into: routes, for: route.id)
     })
 
-  Schedule(stops:, trips:, services:, stop_routes:, transfers:, routes:) |> Ok
+  Schedule(stops:, trips:, services:, transfers:, routes:) |> Ok
 }
 
 fn parse_stop_times(
@@ -330,6 +334,17 @@ fn stop_decoder(
     borough:,
     daytime_routes:,
   ))
+}
+
+pub fn daytime_routes(
+  in schedule: Schedule,
+  for stop_id: StopId,
+) -> set.Set(Route) {
+  let stop = dict.get(schedule.stops, #(stop_id, option.None))
+  case stop {
+    Ok(stop) -> stop.daytime_routes
+    Error(Nil) -> set.new()
+  }
 }
 
 pub type StopId {

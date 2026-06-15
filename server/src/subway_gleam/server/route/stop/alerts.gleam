@@ -36,10 +36,7 @@ pub fn alerts(
     |> result.replace_error(stop.error_unknown_stop(stop_id)),
   )
 
-  let all_routes =
-    state.schedule.stop_routes
-    |> dict.get(stop_id)
-    |> result.unwrap(or: set.new())
+  let all_routes = st.daytime_routes(in: state.schedule, for: stop_id)
   let route =
     route_id |> option.to_result(Nil) |> result.try(route.from_long_id)
 

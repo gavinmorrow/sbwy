@@ -85,19 +85,15 @@ pub fn model(
     |> result.replace_error(UnknownStop(stop_id)),
   )
 
-  let routes =
-    state.schedule.stop_routes
-    |> dict.get(stop_id)
-    |> result.unwrap(or: set.new())
+  let routes = st.daytime_routes(in: state.schedule, for: stop_id)
   let transfers =
     state.schedule.transfers
     |> dict.get(stop.id)
     |> result.unwrap(or: set.new())
     |> set.map(fn(transfer) {
       let routes =
-        state.schedule.stop_routes
-        |> dict.get(transfer.destination)
-        |> result.unwrap(set.new())
+        state.schedule
+        |> st.daytime_routes(for: transfer.destination)
         |> set.map(fn(route_id) {
           let assert Ok(route) = state.schedule.routes |> dict.get(route_id)
           route
