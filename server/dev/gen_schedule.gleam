@@ -13,8 +13,11 @@ import gleam/option.{None, Some}
 "
 
 const trips_prefix = "import subway_gleam/gtfs/st.{
-  type ShapeId, A, B, C, D, E, F, FX, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N6X,
-  N7, N7X, Q, R, S, Sf, Si, Sr, TripId, Trips, W, Z, parse_shape_id,
+  type ShapeId, TripId, Trips, parse_shape_id,
+}
+import subway_gleam/gtfs/st/route.{
+  A, B, C, D, E, F, FX, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N6X, N7, N7X, Q,
+  R, S, Sf, Si, Sr, W, Z,
 }
 
 import gleam/dict
@@ -25,9 +28,10 @@ fn shape_id(shape_id: String) -> ShapeId {
 }
 "
 
-const services_prefix = "import subway_gleam/gtfs/st.{
+const services_prefix = "import subway_gleam/gtfs/st.{Service, StopId}
+import subway_gleam/gtfs/st/route.{
   A, B, C, D, E, F, FX, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N6X, N7, N7X, Q,
-  R, S, Service, Sf, Si, Sr, StopId, W, Z,
+  R, S, Sf, Si, Sr, W, Z,
 }
 
 import gleam/dict
@@ -38,9 +42,10 @@ fn set(dict: dict.Dict(a, b)) -> set.Set(a) {
 }
 "
 
-const stop_routes_prefix = "import subway_gleam/gtfs/st.{
+const stop_routes_prefix = "import subway_gleam/gtfs/st.{StopId}
+import subway_gleam/gtfs/st/route.{
   A, B, C, D, E, F, FX, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N6X, N7, N7X, Q,
-  R, S, Sf, Si, Sr, StopId, W, Z,
+  R, S, Sf, Si, Sr, W, Z,
 }
 
 import gleam/dict
@@ -67,9 +72,10 @@ fn duration(secs: Int, nanos: Int) -> Duration {
 }
 "
 
-const routes_prefix = "import subway_gleam/gtfs/st.{
+const routes_prefix = "import subway_gleam/gtfs/st.{RouteData}
+import subway_gleam/gtfs/st/route.{
   A, B, C, D, E, F, FX, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N6X, N7, N7X, Q,
-  R, RouteData, S, Sf, Si, Sr, W, Z,
+  R, S, Sf, Si, Sr, W, Z,
 }
 
 import gleam/dict

@@ -9,6 +9,7 @@ import wisp
 
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
+import subway_gleam/gtfs/st/route
 import subway_gleam/server/lustre_middleware.{Document, try_lustre_res}
 import subway_gleam/server/route/stop
 import subway_gleam/server/state
@@ -40,7 +41,7 @@ pub fn alerts(
     |> dict.get(stop_id)
     |> result.unwrap(or: set.new())
   let route =
-    route_id |> option.to_result(Nil) |> result.try(st.route_id_long_to_route)
+    route_id |> option.to_result(Nil) |> result.try(route.from_long_id)
 
   let gtfs_store.Data(current: gtfs, last_updated:) = state.fetch_gtfs(state)
 
@@ -83,7 +84,10 @@ pub fn alerts(
   Ok(#(Document(head:, body:), wisp.response(200)))
 }
 
-fn rt_alert_to_model_alert(alert: rt.Alert, state: state.State) -> alerts.Alert {
+fn rt_alert_to_model_alert(
+  alert: rt.Alert,
+  state: state.State,
+) -> alerts.Alert {
   let routes =
     rt.routes_in_alert(alert)
     |> set.map(st.route_data(in: state.schedule, for: _))

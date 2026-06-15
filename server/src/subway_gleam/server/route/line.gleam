@@ -10,6 +10,7 @@ import lustre/element/html
 import wisp
 
 import subway_gleam/gtfs/st
+import subway_gleam/gtfs/st/route.{type Route}
 import subway_gleam/server/lustre_middleware.{Document, try_lustre_res}
 import subway_gleam/server/state
 
@@ -17,7 +18,7 @@ pub fn line(req: wisp.Request, state: state.State, route_id: String) {
   use _req <- try_lustre_res(req)
 
   use route <- result.try(
-    st.route_id_long_to_route(route_id)
+    route.from_long_id(route_id)
     |> result.replace_error(error_unknown_route(route_id)),
   )
 
@@ -74,13 +75,13 @@ fn error_unknown_route(
 }
 
 fn error_no_service(
-  route: st.Route,
+  route: Route,
 ) -> #(lustre_middleware.LustreRes(msg), wisp.Response) {
   #(
     Document(head: [html.title([], "Error: No route data")], body: [
       html.p([], [
         html.text(
-          "Error: Could not find data for route " <> st.route_to_long_id(route),
+          "Error: Could not find data for route " <> route.to_long_id(route),
         ),
       ]),
     ]),

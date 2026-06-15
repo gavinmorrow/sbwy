@@ -14,7 +14,7 @@ import gsv
 import shellout
 import simplifile
 
-import subway_gleam/gtfs/st
+import subway_gleam/gtfs/st/route.{type Route}
 import subway_gleam/gtfs/st_extra
 
 const data_file_path = "./MTA_Subway_Stations.csv"
@@ -101,9 +101,8 @@ pub fn data() -> dict.Dict(StopId, Stop) {
 }
 
 fn output_stop(stop: st_extra.Stop) -> String {
-  let st_extra.Stop(id: st.StopId(id), borough:, daytime_routes:) = stop
+  let st_extra.Stop(id: id, borough:, daytime_routes:) = stop
 
-  let id = "StopId(\"" <> id <> "\")"
   let borough = case borough {
     st_extra.Manhattan -> "Manhattan"
     st_extra.Brooklyn -> "Brooklyn"
@@ -117,33 +116,33 @@ fn output_stop(stop: st_extra.Stop) -> String {
       set.to_list(daytime_routes)
       |> list.map(fn(route) {
         case route {
-          st.N1 -> "N1"
-          st.N2 -> "N2"
-          st.N3 -> "N3"
-          st.N4 -> "N4"
-          st.N5 -> "N5"
-          st.N6 -> "N6"
-          st.N7 -> "N7"
-          st.A -> "A"
-          st.C -> "C"
-          st.E -> "E"
-          st.B -> "B"
-          st.D -> "D"
-          st.F -> "F"
-          st.M -> "M"
-          st.N -> "N"
-          st.Q -> "Q"
-          st.R -> "R"
-          st.W -> "W"
-          st.J -> "J"
-          st.Z -> "Z"
-          st.G -> "G"
-          st.L -> "L"
-          st.S -> "S"
-          st.Sr -> "Sr"
-          st.Sf -> "Sf"
-          st.Si -> "Si"
-          st.N6X | st.N7X | st.FX ->
+          route.N1 -> "N1"
+          route.N2 -> "N2"
+          route.N3 -> "N3"
+          route.N4 -> "N4"
+          route.N5 -> "N5"
+          route.N6 -> "N6"
+          route.N7 -> "N7"
+          route.A -> "A"
+          route.C -> "C"
+          route.E -> "E"
+          route.B -> "B"
+          route.D -> "D"
+          route.F -> "F"
+          route.M -> "M"
+          route.N -> "N"
+          route.Q -> "Q"
+          route.R -> "R"
+          route.W -> "W"
+          route.J -> "J"
+          route.Z -> "Z"
+          route.G -> "G"
+          route.L -> "L"
+          route.S -> "S"
+          route.Sr -> "Sr"
+          route.Sf -> "Sf"
+          route.Si -> "Si"
+          route.N6X | route.N7X | route.FX ->
             panic as "express routes not allowed in daytime routes"
         }
       })
@@ -156,7 +155,7 @@ fn output_stop(stop: st_extra.Stop) -> String {
 }
 
 fn stop_decoder() -> decode.Decoder(st_extra.Stop) {
-  use id <- decode.field("GTFS Stop ID", decode.string |> decode.map(st.StopId))
+  use id <- decode.field("GTFS Stop ID", decode.string)
   use borough <- decode.field("Borough", borough_decoder())
   use daytime_routes <- decode.field(
     "Daytime Routes",
@@ -168,39 +167,39 @@ fn stop_decoder() -> decode.Decoder(st_extra.Stop) {
 
 fn daytime_routes_decoder(
   borough: st_extra.Borough,
-) -> decode.Decoder(set.Set(st.Route)) {
+) -> decode.Decoder(set.Set(Route)) {
   use routes <- decode.then(decode.string)
 
   routes
   |> string.split(on: " ")
   |> list.filter_map(fn(route) {
     case route {
-      "1" -> st.N1 |> Ok
-      "2" -> st.N2 |> Ok
-      "3" -> st.N3 |> Ok
-      "4" -> st.N4 |> Ok
-      "5" -> st.N5 |> Ok
-      "6" -> st.N6 |> Ok
-      "7" -> st.N7 |> Ok
-      "A" -> st.A |> Ok
-      "B" -> st.B |> Ok
-      "C" -> st.C |> Ok
-      "D" -> st.D |> Ok
-      "E" -> st.E |> Ok
-      "F" -> st.F |> Ok
-      "G" -> st.G |> Ok
-      "J" -> st.J |> Ok
-      "L" -> st.L |> Ok
-      "M" -> st.M |> Ok
-      "N" -> st.N |> Ok
-      "Q" -> st.Q |> Ok
-      "R" -> st.R |> Ok
-      "S" if borough == st_extra.Manhattan -> st.S |> Ok
-      "S" if borough == st_extra.Brooklyn -> st.Sf |> Ok
-      "S" if borough == st_extra.Queens -> st.Sr |> Ok
-      "W" -> st.W |> Ok
-      "Z" -> st.Z |> Ok
-      "SIR" -> st.Si |> Ok
+      "1" -> route.N1 |> Ok
+      "2" -> route.N2 |> Ok
+      "3" -> route.N3 |> Ok
+      "4" -> route.N4 |> Ok
+      "5" -> route.N5 |> Ok
+      "6" -> route.N6 |> Ok
+      "7" -> route.N7 |> Ok
+      "A" -> route.A |> Ok
+      "B" -> route.B |> Ok
+      "C" -> route.C |> Ok
+      "D" -> route.D |> Ok
+      "E" -> route.E |> Ok
+      "F" -> route.F |> Ok
+      "G" -> route.G |> Ok
+      "J" -> route.J |> Ok
+      "L" -> route.L |> Ok
+      "M" -> route.M |> Ok
+      "N" -> route.N |> Ok
+      "Q" -> route.Q |> Ok
+      "R" -> route.R |> Ok
+      "S" if borough == st_extra.Manhattan -> route.S |> Ok
+      "S" if borough == st_extra.Brooklyn -> route.Sf |> Ok
+      "S" if borough == st_extra.Queens -> route.Sr |> Ok
+      "W" -> route.W |> Ok
+      "Z" -> route.Z |> Ok
+      "SIR" -> route.Si |> Ok
       _ -> Error(Nil)
     }
   })

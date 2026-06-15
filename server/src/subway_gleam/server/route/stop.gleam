@@ -15,6 +15,7 @@ import wisp
 
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
+import subway_gleam/gtfs/st/route.{type Route}
 import subway_gleam/server/hydration_scripts.{hydration_scripts}
 import subway_gleam/server/log
 import subway_gleam/server/lustre_middleware.{Document, try_lustre_res}
@@ -182,7 +183,7 @@ pub fn model(
 //       it adds slightly noticable lag to each request
 pub fn filter_alerts(
   gtfs: rt.Data,
-  routes: set.Set(st.Route),
+  routes: set.Set(Route),
   stop_id: st.StopId,
 ) -> List(rt.Alert) {
   let current_time = util.current_time()
@@ -211,7 +212,7 @@ pub fn filter_alerts(
       let matches_route_id =
         target.route_id
         |> option.to_result(Nil)
-        |> result.try(fn(id) { st.parse_route(id) |> result.replace_error(Nil) })
+        |> result.try(fn(id) { route.parse(id) |> result.replace_error(Nil) })
         |> result.map(set.contains(_, in: routes))
         |> result.unwrap(or: False)
 
@@ -289,7 +290,7 @@ fn arrival_li(
   let train_url = "/train/" <> rt.trip_id_to_string(trip.id) <> "/?" <> query
 
   // TODO: use default route bullet instead of panicking
-  let assert Ok(route) = st.parse_route(trip.route)
+  let assert Ok(route) = route.parse(trip.route)
   let route =
     schedule |> st.route_data(for: route) |> route_bullet.from_route_data
 

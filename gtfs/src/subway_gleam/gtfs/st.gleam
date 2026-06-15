@@ -19,6 +19,7 @@ import gsv
 
 import subway_gleam/gtfs/internal/decode_parse_str_field.{decode_parse_str_field}
 import subway_gleam/gtfs/internal/ffi
+import subway_gleam/gtfs/st/route.{type Route}
 
 pub type Feed {
   /// This file represents the "normal" subway schedule and does not include
@@ -345,48 +346,6 @@ pub type Direction {
   South
 }
 
-pub type Route {
-  N1
-  N2
-  N3
-
-  N4
-  N5
-  N6
-  N6X
-
-  N7
-  N7X
-
-  A
-  C
-  E
-
-  B
-  D
-  F
-  FX
-  M
-
-  N
-  Q
-  R
-  W
-
-  J
-  Z
-
-  G
-
-  L
-
-  S
-  Sr
-  Sf
-
-  Si
-}
-
 pub type BulletShape {
   Circle
   Diamond
@@ -394,33 +353,33 @@ pub type BulletShape {
 
 pub fn bullet_shape(for route: Route) -> BulletShape {
   case route {
-    N6X | N7X | FX -> Diamond
-    N1
-    | N2
-    | N3
-    | N4
-    | N5
-    | N6
-    | N7
-    | A
-    | C
-    | E
-    | B
-    | D
-    | F
-    | M
-    | N
-    | Q
-    | R
-    | W
-    | J
-    | Z
-    | G
-    | L
-    | S
-    | Sr
-    | Sf
-    | Si -> Circle
+    route.N6X | route.N7X | route.FX -> Diamond
+    route.N1
+    | route.N2
+    | route.N3
+    | route.N4
+    | route.N5
+    | route.N6
+    | route.N7
+    | route.A
+    | route.C
+    | route.E
+    | route.B
+    | route.D
+    | route.F
+    | route.M
+    | route.N
+    | route.Q
+    | route.R
+    | route.W
+    | route.J
+    | route.Z
+    | route.G
+    | route.L
+    | route.S
+    | route.Sr
+    | route.Sf
+    | route.Si -> Circle
   }
 }
 
@@ -455,80 +414,6 @@ pub fn parse_stop_id_no_direction(from str: String) -> Result(StopId, Nil) {
   case direction {
     option.None -> Ok(id)
     option.Some(_) -> Error(Nil)
-  }
-}
-
-/// This exists so that the app can convert Route <=> String losslessly.
-/// It is essentially string.inspect.
-/// It is the opposite of route_id_long_to_route().
-pub fn route_to_long_id(route: Route) -> String {
-  case route {
-    A -> "A"
-    B -> "B"
-    C -> "C"
-    D -> "D"
-    E -> "E"
-    F -> "F"
-    FX -> "FX"
-    G -> "G"
-    J -> "J"
-    L -> "L"
-    M -> "M"
-    N -> "N"
-    N1 -> "1"
-    N2 -> "2"
-    N3 -> "3"
-    N4 -> "4"
-    N5 -> "5"
-    N6 -> "6"
-    N6X -> "6X"
-    N7 -> "7"
-    N7X -> "7X"
-    Q -> "Q"
-    R -> "R"
-    S -> "S"
-    Sf -> "Sf"
-    Si -> "Si"
-    Sr -> "Sr"
-    W -> "W"
-    Z -> "Z"
-  }
-}
-
-/// This exists so that the app can convert Route <=> String losslessly.
-/// It is the opposite of route_to_long_id().
-pub fn route_id_long_to_route(route: String) -> Result(Route, Nil) {
-  case route {
-    "A" -> A |> Ok
-    "B" -> B |> Ok
-    "C" -> C |> Ok
-    "D" -> D |> Ok
-    "E" -> E |> Ok
-    "F" -> F |> Ok
-    "FX" -> FX |> Ok
-    "G" -> G |> Ok
-    "J" -> J |> Ok
-    "L" -> L |> Ok
-    "M" -> M |> Ok
-    "N" -> N |> Ok
-    "1" -> N1 |> Ok
-    "2" -> N2 |> Ok
-    "3" -> N3 |> Ok
-    "4" -> N4 |> Ok
-    "5" -> N5 |> Ok
-    "6" -> N6 |> Ok
-    "6X" -> N6X |> Ok
-    "7" -> N7 |> Ok
-    "7X" -> N7X |> Ok
-    "Q" -> Q |> Ok
-    "R" -> R |> Ok
-    "S" -> S |> Ok
-    "Sf" -> Sf |> Ok
-    "Si" -> Si |> Ok
-    "Sr" -> Sr |> Ok
-    "W" -> W |> Ok
-    "Z" -> Z |> Ok
-    _ -> Error(Nil)
   }
 }
 
@@ -610,7 +495,7 @@ type Trip {
 fn trip_decoder() -> decode.Decoder(Trip) {
   use id <- decode.field("trip_id", decode.string)
   let id = TripId(id)
-  use route_id <- decode.field("route_id", route_decoder())
+  use route_id <- decode.field("route_id", route.decoder())
   use headsign <- decode.field("trip_headsign", decode.string)
   use shape_id <- decode.optional_field(
     "shape_id",
@@ -618,50 +503,6 @@ fn trip_decoder() -> decode.Decoder(Trip) {
     shape_id_decoder() |> decode.map(option.Some),
   )
   decode.success(Trip(id:, route_id:, headsign:, shape_id:))
-}
-
-/// For parsing from GTFS
-pub fn parse_route(route) {
-  case route {
-    "A" -> A |> Ok
-    "B" -> B |> Ok
-    "C" -> C |> Ok
-    "D" -> D |> Ok
-    "E" -> E |> Ok
-    "F" -> F |> Ok
-    "FX" -> FX |> Ok
-    "G" -> G |> Ok
-    "J" -> J |> Ok
-    "L" -> L |> Ok
-    "M" -> M |> Ok
-    "N" -> N |> Ok
-    "1" -> N1 |> Ok
-    "2" -> N2 |> Ok
-    "3" -> N3 |> Ok
-    "4" -> N4 |> Ok
-    "5" -> N5 |> Ok
-    "6" -> N6 |> Ok
-    "6X" -> N6X |> Ok
-    "7" -> N7 |> Ok
-    "7X" -> N7X |> Ok
-    "Q" -> Q |> Ok
-    "R" -> R |> Ok
-    "GS" -> S |> Ok
-    "FS" -> Sf |> Ok
-    "SI" -> Si |> Ok
-    "H" -> Sr |> Ok
-    "W" -> W |> Ok
-    "Z" -> Z |> Ok
-    route -> Error(route)
-  }
-}
-
-fn route_decoder() -> decode.Decoder(Route) {
-  use route <- decode.then(decode.string)
-  case parse_route(route) {
-    Ok(route) -> decode.success(route)
-    Error(route) -> decode.failure(A, "Route (in trip) (" <> route <> ")")
-  }
 }
 
 pub opaque type ShapeId {
@@ -718,7 +559,7 @@ pub type RouteData {
 }
 
 fn route_data_decoder() -> decode.Decoder(RouteData) {
-  use id <- decode.field("route_id", route_decoder())
+  use id <- decode.field("route_id", route.decoder())
   use short_name <- decode.field("route_short_name", decode.string)
   use long_name <- decode.field("route_long_name", decode.string)
   use desc <- decode.field("route_desc", decode.string)

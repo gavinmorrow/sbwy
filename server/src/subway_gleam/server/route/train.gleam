@@ -8,11 +8,11 @@ import gleam/time/timestamp
 import gleam/uri
 import lustre/attribute
 import lustre/element/html
-import subway_gleam/shared/util/time
 import wisp
 
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
+import subway_gleam/gtfs/st/route
 import subway_gleam/server/hydration_scripts.{hydration_scripts}
 import subway_gleam/server/lustre_middleware.{Document, try_lustre_res}
 import subway_gleam/server/state
@@ -21,6 +21,7 @@ import subway_gleam/server/time_zone
 import subway_gleam/shared/component/route_bullet
 import subway_gleam/shared/route/train
 import subway_gleam/shared/util/live_status
+import subway_gleam/shared/util/time
 
 pub fn train(
   req: wisp.Request,
@@ -75,7 +76,7 @@ pub fn model(
   use #(trip, stops) <- result.try(trip)
 
   // TODO: use default route bullet instead of panicking
-  let assert Ok(route) = trip.route |> st.parse_route
+  let assert Ok(route) = trip.route |> route.parse
   let route =
     state.schedule |> st.route_data(route) |> route_bullet.from_route_data
 

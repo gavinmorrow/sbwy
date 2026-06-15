@@ -14,6 +14,7 @@ import subway_gleam/gtfs/internal/unix_time_to_timestamp.{unix_time_to_timestamp
 import subway_gleam/gtfs/rt/rich_text.{type RichText}
 import subway_gleam/gtfs/rt/time_range.{type TimeRange}
 import subway_gleam/gtfs/st
+import subway_gleam/gtfs/st/route.{type Route}
 
 // TODO: find a better name
 pub type Data {
@@ -297,7 +298,7 @@ fn parse_trip_update(
 }
 
 /// Extracts the routes of all trains in the arrivals list for a given stop.
-pub fn routes_arriving(gtfs: Data, at stop: st.StopId) -> set.Set(st.Route) {
+pub fn routes_arriving(gtfs: Data, at stop: st.StopId) -> set.Set(Route) {
   let arrivals =
     gtfs.arrivals
     |> dict.get(stop)
@@ -305,7 +306,7 @@ pub fn routes_arriving(gtfs: Data, at stop: st.StopId) -> set.Set(st.Route) {
 
   list.fold(over: arrivals, from: set.new(), with: fn(acc, arrival) {
     let #(trip, _train_stopping) = arrival
-    case st.parse_route(trip.route) {
+    case route.parse(trip.route) {
       Ok(route) -> set.insert(route, into: acc)
       // If the route is unknown/invalid, don't bother adding it
       // This is best-effort
@@ -314,13 +315,13 @@ pub fn routes_arriving(gtfs: Data, at stop: st.StopId) -> set.Set(st.Route) {
   })
 }
 
-pub fn routes_in_alert(alert: Alert) -> set.Set(st.Route) {
+pub fn routes_in_alert(alert: Alert) -> set.Set(Route) {
   use acc, target <- list.fold(over: alert.targets, from: set.new())
 
   let gtfs_rt_nyct.EntitySelector(route_id:, ..) = target
   let route_id = option.to_result(route_id, "")
 
-  case result.try(route_id, st.parse_route) {
+  case result.try(route_id, route.parse) {
     Ok(route) -> set.insert(route, into: acc)
     Error(_) -> acc
   }

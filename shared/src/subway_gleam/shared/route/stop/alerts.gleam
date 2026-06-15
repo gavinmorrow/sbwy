@@ -7,6 +7,7 @@ import lustre/element/html
 
 import subway_gleam/gtfs/rt/rich_text.{type RichText}
 import subway_gleam/gtfs/st
+import subway_gleam/gtfs/st/route
 import subway_gleam/shared/component/last_updated
 import subway_gleam/shared/component/navbar.{navbar}
 import subway_gleam/shared/component/rich_text as rich_text_component
@@ -42,7 +43,7 @@ pub fn view(model: Model) -> Element(msg) {
     let bullets =
       all_routes
       |> set.map(fn(route) {
-        let route_id = st.route_to_long_id(route.id)
+        let route_id = route.to_long_id(route.id)
         let bullet = route_bullet.from_route_data(route)
         html.a(
           [
