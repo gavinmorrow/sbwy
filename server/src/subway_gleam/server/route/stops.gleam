@@ -19,17 +19,10 @@ pub fn stops(req: wisp.Request, state: state.State) -> wisp.Response {
   let all_stops =
     state.schedule.stops
     |> dict.values
-    |> list.filter_map(fn(stop) {
-      case stop.direction {
-        option.Some(_) -> Error(Nil)
-        option.None -> Ok(st.Stop(..stop, direction: Nil))
-      }
-    })
   let stop_routes =
     state.schedule.stops
     // Transform into expected shape
     |> dict.fold(from: dict.new(), with: fn(acc, stop_id, stop) {
-      let #(stop_id, _direction) = stop_id
       let routes =
         set.map(stop.daytime_routes, st.route_data(for: _, in: state.schedule))
         |> set.to_list

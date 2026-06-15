@@ -32,7 +32,7 @@ pub fn alerts(
   )
   use stop <- result.try(
     state.schedule.stops
-    |> dict.get(#(stop_id, option.None))
+    |> dict.get(stop_id)
     |> result.replace_error(stop.error_unknown_stop(stop_id)),
   )
 

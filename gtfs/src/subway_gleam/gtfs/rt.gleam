@@ -20,7 +20,7 @@ import subway_gleam/gtfs/st/route.{type Route}
 pub type Data {
   Data(
     arrivals: dict.Dict(st.StopId, List(#(Trip, TrainStopping))),
-    final_stops: dict.Dict(st.ShapeId, #(st.StopId, st.Direction)),
+    final_stops: dict.Dict(st.ShapeId, st.StopId),
     trips: dict.Dict(TripId, #(Trip, List(TrainStopping))),
     alerts: List(Alert),
   )
@@ -250,10 +250,11 @@ pub fn analyze(raw: gtfs_rt_nyct.FeedMessage) -> Data {
             final_stops: {
               case final_stop, trip.id |> parse_shape_id {
                 Ok(final_stop), Ok(shape_id) ->
-                  dict.insert(into: acc.final_stops, for: shape_id, insert: #(
-                    final_stop.stop_id,
-                    final_stop.direction,
-                  ))
+                  dict.insert(
+                    into: acc.final_stops,
+                    for: shape_id,
+                    insert: final_stop.stop_id,
+                  )
                 _, _ -> acc.final_stops
               }
             },

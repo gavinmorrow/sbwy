@@ -81,7 +81,7 @@ pub fn model(
   )
   use stop <- result.try(
     state.schedule.stops
-    |> dict.get(#(stop_id, option.None))
+    |> dict.get(stop_id)
     |> result.replace_error(UnknownStop(stop_id)),
   )
 
@@ -270,7 +270,6 @@ fn arrival_li(
     |> dict.get(shape_id)
     |> result.lazy_or(fn() {
       dict.get(gtfs.final_stops, shape_id)
-      |> result.map(pair.map_second(_, option.Some))
       |> result.try(dict.get(schedule.stops, _))
       |> result.map(fn(stop) { stop.name })
       // TODO: maybe don't want to always have a value?

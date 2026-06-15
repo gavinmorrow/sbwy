@@ -89,9 +89,10 @@ pub fn model(
           // If the headsign isn't in the ST, take the name of the last stop in
           // the trip
           use last_stop <- result.try(list.last(stops))
-          use last_stop <- result.map(
-            dict.get(state.schedule.stops, #(last_stop.stop_id, option.None)),
-          )
+          use last_stop <- result.map(dict.get(
+            state.schedule.stops,
+            last_stop.stop_id,
+          ))
           last_stop.name
         }
       }
@@ -103,13 +104,12 @@ pub fn model(
       // If the stop doesn't exist in the stops.txt, it's an internal timepoint
       // and can be ignored.
       // See <https://groups.google.com/g/mtadeveloperresources/c/fdlP92IKmF8>
-      result.map(
-        dict.get(state.schedule.stops, #(
-          arrival.stop_id,
-          option.Some(arrival.direction),
-        )),
-        stop_li(_, arrival.time, trip_id, state.schedule),
-      )
+      result.map(dict.get(state.schedule.stops, arrival.stop_id), stop_li(
+        _,
+        arrival.time,
+        trip_id,
+        state.schedule,
+      ))
     })
 
   let cur_time = time_zone.now(state.tz_db)
@@ -148,7 +148,7 @@ fn error_could_not_find_train(
 }
 
 fn stop_li(
-  stop: st.Stop(a),
+  stop: st.Stop,
   time: timestamp.Timestamp,
   trip_id: rt.TripId,
   schedule: st.Schedule,

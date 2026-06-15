@@ -37,10 +37,7 @@ pub type Feed {
 
 pub type Schedule {
   Schedule(
-    stops: dict.Dict(
-      #(StopId, option.Option(Direction)),
-      Stop(option.Option(Direction)),
-    ),
+    stops: dict.Dict(StopId, Stop),
     trips: Trips,
     services: dict.Dict(Route, Service),
     transfers: dict.Dict(StopId, set.Set(Transfer)),
@@ -106,7 +103,7 @@ pub fn parse(bits: BitArray) -> Result(Schedule, FetchError) {
   use stops <- result.try(parse_file("stops.txt", stop_decoder(st_extra_data)))
   let stops =
     list.fold(over: stops, from: dict.new(), with: fn(acc, stop) {
-      acc |> dict.insert(for: #(stop.id, stop.direction), insert: stop)
+      acc |> dict.insert(for: stop.id, insert: stop)
     })
 
   use stop_times <- result.try(parse_file("stop_times.txt", stop_time_decoder()))
@@ -267,10 +264,9 @@ fn stop_time_decoder() -> decode.Decoder(StopTime) {
   |> decode.success
 }
 
-pub type Stop(direction) {
+pub type Stop {
   Stop(
     id: StopId,
-    direction: direction,
     name: String,
     lat: Float,
     lon: Float,
@@ -286,8 +282,8 @@ pub type Stop(direction) {
 
 fn stop_decoder(
   st_extra_data: dict.Dict(String, st_extra.Stop),
-) -> decode.Decoder(Stop(option.Option(Direction))) {
-  use #(id, direction) <- decode.field("stop_id", stop_id_decoder())
+) -> decode.Decoder(Stop) {
+  use #(id, _direction) <- decode.field("stop_id", stop_id_decoder())
   use name <- decode.field("stop_name", decode.string)
   use lat <- decode.field(
     "stop_lat",
@@ -325,7 +321,6 @@ fn stop_decoder(
 
   decode.success(Stop(
     id:,
-    direction:,
     name:,
     lat:,
     lon:,
@@ -340,7 +335,7 @@ pub fn daytime_routes(
   in schedule: Schedule,
   for stop_id: StopId,
 ) -> set.Set(Route) {
-  let stop = dict.get(schedule.stops, #(stop_id, option.None))
+  let stop = dict.get(schedule.stops, stop_id)
   case stop {
     Ok(stop) -> stop.daytime_routes
     Error(Nil) -> set.new()

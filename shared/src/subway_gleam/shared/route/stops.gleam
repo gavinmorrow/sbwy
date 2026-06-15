@@ -23,7 +23,7 @@ import subway_gleam/shared/util/stop_id_json
 
 pub type Model {
   Model(
-    all_stops: List(st.Stop(Nil)),
+    all_stops: List(st.Stop),
     stop_routes: dict.Dict(st.StopId, List(route_bullet.RouteBullet)),
     cur_position: option.Option(geolocation.Position),
     fav_stops: List(StopLi),
@@ -121,7 +121,7 @@ fn stop_li(
 }
 
 /// The distance between a stop and a position, in meters.
-fn stop_distance(stop: st.Stop(Nil), pos pos: geolocation.Position) -> Float {
+fn stop_distance(stop: st.Stop, pos pos: geolocation.Position) -> Float {
   // TODO: account for pos accuracy
   let distance_km =
     haversine.distance(from: #(stop.lat, stop.lon), to: #(
@@ -156,7 +156,7 @@ pub fn model_to_json(model: Model) -> json.Json {
   ])
 }
 
-fn stop_decoder() -> decode.Decoder(st.Stop(Nil)) {
+fn stop_decoder() -> decode.Decoder(st.Stop) {
   let float_or_int_decoder =
     decode.one_of(decode.float, or: [decode.int |> decode.map(int.to_float)])
 
@@ -172,7 +172,6 @@ fn stop_decoder() -> decode.Decoder(st.Stop(Nil)) {
 
   st.Stop(
     id:,
-    direction: Nil,
     name:,
     lat:,
     lon:,
@@ -184,10 +183,9 @@ fn stop_decoder() -> decode.Decoder(st.Stop(Nil)) {
   |> decode.success
 }
 
-fn stop_to_json(stop: st.Stop(Nil)) -> json.Json {
+fn stop_to_json(stop: st.Stop) -> json.Json {
   let st.Stop(
     id:,
-    direction: _,
     name:,
     lat:,
     lon:,

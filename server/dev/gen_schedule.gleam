@@ -6,7 +6,7 @@ import subway_gleam/gtfs/st
 
 const path = "src/subway_gleam/gtfs/st/schedule_sample"
 
-const stops_prefix = "import subway_gleam/gtfs/st.{North, South, Stop, StopId}
+const stops_prefix = "import subway_gleam/gtfs/st.{Stop, StopId}
 import subway_gleam/gtfs/st/route.{
   A, B, C, D, E, F, FX, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N6X, N7, N7X, Q,
   R, S, Sf, Si, Sr, W, Z,

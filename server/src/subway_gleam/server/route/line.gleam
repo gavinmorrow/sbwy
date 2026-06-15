@@ -32,9 +32,7 @@ pub fn line(req: wisp.Request, state: state.State, route_id: String) {
   let stops =
     stops
     |> set.to_list
-    |> list.filter_map(fn(id) {
-      state.schedule.stops |> dict.get(#(id, option.None))
-    })
+    |> list.filter_map(fn(id) { state.schedule.stops |> dict.get(id) })
     |> list.sort(by: fn(a, b) { string.compare(a.name, b.name) })
   let stop_elems = list.map(stops, stop_li)
   let stops_ul = html.ul([], stop_elems)
@@ -45,11 +43,10 @@ pub fn line(req: wisp.Request, state: state.State, route_id: String) {
   Ok(#(Document(head:, body:), wisp.response(200)))
 }
 
-fn stop_li(stop: st.Stop(direction)) -> element.Element(msg) {
+fn stop_li(stop: st.Stop) -> element.Element(msg) {
   let st.Stop(
     name:,
     id:,
-    direction: _,
     lat: _,
     lon: _,
     location_type: _,
