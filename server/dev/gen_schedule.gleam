@@ -7,9 +7,21 @@ import subway_gleam/gtfs/st
 const path = "src/subway_gleam/gtfs/st/schedule_sample"
 
 const stops_prefix = "import subway_gleam/gtfs/st.{North, South, Stop, StopId}
+import subway_gleam/gtfs/st/route.{
+  A, B, C, D, E, F, FX, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N6X, N7, N7X, Q,
+  R, S, Sf, Si, Sr, W, Z,
+}
+import subway_gleam/gtfs/st_extra.{
+  Bronx, Brooklyn, Manhattan, Queens, StatenIsland,
+}
 
 import gleam/dict
 import gleam/option.{None, Some}
+import gleam/set
+
+fn set(dict: dict.Dict(a, b)) -> set.Set(a) {
+  dict |> dict.keys |> set.from_list
+}
 "
 
 const trips_prefix = "import subway_gleam/gtfs/st.{
@@ -42,19 +54,21 @@ fn set(dict: dict.Dict(a, b)) -> set.Set(a) {
 }
 "
 
-const stop_routes_prefix = "import subway_gleam/gtfs/st.{StopId}
-import subway_gleam/gtfs/st/route.{
-  A, B, C, D, E, F, FX, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N6X, N7, N7X, Q,
-  R, S, Sf, Si, Sr, W, Z,
-}
+// See comment about stop_routes in st.parse
+// 
+// const stop_routes_prefix = "import subway_gleam/gtfs/st.{StopId}
+// import subway_gleam/gtfs/st/route.{
+//   A, B, C, D, E, F, FX, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N6X, N7, N7X, Q,
+//   R, S, Sf, Si, Sr, W, Z,
+// }
 
-import gleam/dict
-import gleam/set
+// import gleam/dict
+// import gleam/set
 
-fn set(dict: dict.Dict(a, b)) -> set.Set(a) {
-  dict |> dict.keys |> set.from_list
-}
-"
+// fn set(dict: dict.Dict(a, b)) -> set.Set(a) {
+//   dict |> dict.keys |> set.from_list
+// }
+// "
 
 const transfers_prefix = "import subway_gleam/gtfs/st.{StopId, Transfer}
 
@@ -86,7 +100,6 @@ import subway_gleam/gtfs/st.{Schedule}
 import subway_gleam/gtfs/st/schedule_sample/stops.{stops}
 import subway_gleam/gtfs/st/schedule_sample/trips.{trips}
 import subway_gleam/gtfs/st/schedule_sample/services.{services}
-import subway_gleam/gtfs/st/schedule_sample/stop_routes.{stop_routes}
 import subway_gleam/gtfs/st/schedule_sample/transfers.{transfers}
 import subway_gleam/gtfs/st/schedule_sample/routes.{routes}
 
@@ -96,7 +109,6 @@ pub fn schedule() {
     stops: stops(),
     trips: trips(),
     services: services(),
-    stop_routes: stop_routes(),
     transfers: transfers(),
     routes: routes(),
   ))
@@ -115,6 +127,7 @@ pub fn main() -> Nil {
     string.inspect(schedule.stops)
     // The ShapeId constructor is opaque, so there's a helper func
     |> string.replace(each: "ShapeId(", with: "shape_id(")
+    |> string.replace(each: "Set(", with: "set(")
   // |> string.replace(each: "StopId(", with: "stop_id(")
   let assert Ok(Nil) =
     simplifile.write(
@@ -142,6 +155,7 @@ pub fn main() -> Nil {
       contents: services_prefix <> "pub fn services() {" <> services_str <> "}",
     )
   // See comment about stop_routes in st.parse
+  // 
   // let stop_routes_str =
   //   string.inspect(schedule.stop_routes)
   //   // The ShapeId constructor is opaque, so there's a helper func
