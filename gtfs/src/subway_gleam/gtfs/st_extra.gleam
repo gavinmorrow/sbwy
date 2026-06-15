@@ -8,6 +8,7 @@ import subway_gleam/gtfs/st
 
 pub type Stop {
   Stop(
+    id: st.StopId,
     borough: Borough,
     /// The routes that "normally" (ie, daytime weekdays) stop at the stop.
     /// Does not account for rush hour express.

@@ -63,8 +63,8 @@ changes very very infrequently.
 If a station is added or removed to the subway (or the data otherwise changes):
 1. `cd` into the gtfs project
 2. Download the CSV output from
-   <https://catalog.data.gov/dataset/mta-subway-stations-and-complexes> and save
-   it into `./MTA_Subway_Stations_and_Complexes.csv`.
+   <https://catalog.data.gov/dataset/mta-subway-stations> and save it into
+   `./MTA_Subway_Stations.csv`.
 3. Run `gleam run -m build_st_extra`.
 
 #### Log Levels

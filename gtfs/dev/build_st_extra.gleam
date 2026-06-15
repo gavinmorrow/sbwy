@@ -17,7 +17,7 @@ import simplifile
 import subway_gleam/gtfs/st
 import subway_gleam/gtfs/st_extra
 
-const data_file_path = "./MTA_Subway_Stations_and_Complexes.csv"
+const data_file_path = "./MTA_Subway_Stations.csv"
 
 const output_file_path = "./src/subway_gleam/gtfs/st_extra_data.gleam"
 
@@ -81,7 +81,7 @@ fn output(data: List(st_extra.Stop)) -> String {
 
 import subway_gleam/gtfs/st.{
   A, B, C, D, E, F, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N7, Q, R, S, Sf, Si,
-  Sr, W, Z,
+  Sr, StopId, W, Z,
 }
 import subway_gleam/gtfs/st_extra.{
   type Stop, Bronx, Brooklyn, Manhattan, Queens, StatenIsland, Stop,
@@ -100,8 +100,9 @@ pub fn data() -> List(Stop) {
 }
 
 fn output_stop(stop: st_extra.Stop) -> String {
-  let st_extra.Stop(borough:, daytime_routes:) = stop
+  let st_extra.Stop(id: st.StopId(id), borough:, daytime_routes:) = stop
 
+  let id = "StopId(\"" <> id <> "\")"
   let borough = case borough {
     st_extra.Manhattan -> "Manhattan"
     st_extra.Brooklyn -> "Brooklyn"
@@ -149,17 +150,18 @@ fn output_stop(stop: st_extra.Stop) -> String {
     }
     <> "])"
 
-  "Stop(" <> borough <> ", " <> daytime_routes <> ")"
+  "Stop(" <> id <> ", " <> borough <> ", " <> daytime_routes <> ")"
 }
 
 fn stop_decoder() -> decode.Decoder(st_extra.Stop) {
+  use id <- decode.field("GTFS Stop ID", decode.string |> decode.map(st.StopId))
   use borough <- decode.field("Borough", borough_decoder())
   use daytime_routes <- decode.field(
     "Daytime Routes",
     daytime_routes_decoder(borough),
   )
 
-  st_extra.Stop(borough:, daytime_routes:) |> decode.success
+  st_extra.Stop(id:, borough:, daytime_routes:) |> decode.success
 }
 
 fn daytime_routes_decoder(
