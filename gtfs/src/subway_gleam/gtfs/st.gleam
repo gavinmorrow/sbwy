@@ -16,10 +16,12 @@ import gleam/set
 import gleam/string
 import gleam/time/duration
 import gsv
+import subway_gleam/gtfs/st_extra
 
 import subway_gleam/gtfs/internal/decode_parse_str_field.{decode_parse_str_field}
 import subway_gleam/gtfs/internal/ffi
 import subway_gleam/gtfs/st/route.{type Route}
+import subway_gleam/gtfs/st_extra_data
 
 pub type Feed {
   /// This file represents the "normal" subway schedule and does not include
@@ -101,7 +103,8 @@ pub fn parse(bits: BitArray) -> Result(Schedule, FetchError) {
   use trips <- result.try(parse_file("trips.txt", trip_decoder()))
   let trips = trips_from_rows(trips)
 
-  use stops <- result.try(parse_file("stops.txt", stop_decoder()))
+  let st_extra_data = st_extra_data.data()
+  use stops <- result.try(parse_file("stops.txt", stop_decoder(st_extra_data)))
   let stops =
     list.fold(over: stops, from: dict.new(), with: fn(acc, stop) {
       acc |> dict.insert(for: #(stop.id, stop.direction), insert: stop)
@@ -269,10 +272,17 @@ pub type Stop(direction) {
     lon: Float,
     location_type: option.Option(Int),
     parent_station: option.Option(StopId),
+    // === Extra fields === //
+    borough: st_extra.Borough,
+    /// The routes that "normally" (ie, daytime weekdays) stop at the stop.
+    /// Does not account for rush hour express.
+    daytime_routes: set.Set(Route),
   )
 }
 
-fn stop_decoder() -> decode.Decoder(Stop(option.Option(Direction))) {
+fn stop_decoder(
+  st_extra_data: dict.Dict(String, st_extra.Stop),
+) -> decode.Decoder(Stop(option.Option(Direction))) {
   use #(id, direction) <- decode.field("stop_id", stop_id_decoder())
   use name <- decode.field("stop_name", decode.string)
   use lat <- decode.field(
@@ -304,6 +314,11 @@ fn stop_decoder() -> decode.Decoder(Stop(option.Option(Direction))) {
       |> decode.map(option.Some),
   )
 
+  let assert Ok(st_extra.Stop(borough:, daytime_routes:)) =
+    dict.get(st_extra_data, case id {
+      StopId(id) -> id
+    })
+
   decode.success(Stop(
     id:,
     direction:,
@@ -312,6 +327,8 @@ fn stop_decoder() -> decode.Decoder(Stop(option.Option(Direction))) {
     lon:,
     location_type:,
     parent_station:,
+    borough:,
+    daytime_routes:,
   ))
 }
 

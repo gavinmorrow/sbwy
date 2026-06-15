@@ -54,6 +54,8 @@ fn stop_li(stop: st.Stop(direction)) -> element.Element(msg) {
     lon: _,
     location_type: _,
     parent_station: _,
+    borough: _,
+    daytime_routes: _,
   ) = stop
 
   let url = "/stop/" <> st.stop_id_to_string(id, direction: option.None) <> "/"

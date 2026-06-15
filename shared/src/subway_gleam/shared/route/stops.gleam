@@ -6,12 +6,15 @@ import gleam/json
 import gleam/list
 import gleam/option
 import gleam/result
+import gleam/set
 import lustre/attribute
 import lustre/element
 import lustre/element/html
 import lustre/element/keyed
 
 import subway_gleam/gtfs/st
+import subway_gleam/gtfs/st/route.{type Route}
+import subway_gleam/gtfs/st_extra
 import subway_gleam/shared/component/navbar.{navbar}
 import subway_gleam/shared/component/route_bullet
 import subway_gleam/shared/ffi/geolocation
@@ -161,6 +164,11 @@ fn stop_decoder() -> decode.Decoder(st.Stop(Nil)) {
   use name <- decode.field("name", decode.string)
   use lat <- decode.field("lat", float_or_int_decoder)
   use lon <- decode.field("lon", float_or_int_decoder)
+  use borough <- decode.field("borough", borough_decoder())
+  use daytime_routes <- decode.field(
+    "daytime_routes",
+    decode.list(of: route_decoder()) |> decode.map(set.from_list),
+  )
 
   st.Stop(
     id:,
@@ -170,6 +178,8 @@ fn stop_decoder() -> decode.Decoder(st.Stop(Nil)) {
     lon:,
     location_type: option.None,
     parent_station: option.None,
+    borough:,
+    daytime_routes:,
   )
   |> decode.success
 }
@@ -183,6 +193,8 @@ fn stop_to_json(stop: st.Stop(Nil)) -> json.Json {
     lon:,
     location_type: _,
     parent_station: _,
+    borough:,
+    daytime_routes:,
   ) = stop
   let st.StopId(id) = id
 
@@ -191,5 +203,47 @@ fn stop_to_json(stop: st.Stop(Nil)) -> json.Json {
     #("name", json.string(name)),
     #("lat", json.float(lat)),
     #("lon", json.float(lon)),
+    #("borough", borough_to_json(borough)),
+    #(
+      "daytime_routes",
+      json.preprocessed_array(
+        daytime_routes |> set.to_list |> list.map(route_to_json),
+      ),
+    ),
   ])
+}
+
+fn borough_decoder() -> decode.Decoder(st_extra.Borough) {
+  use borough <- decode.then(decode.string)
+  case borough {
+    "Manhattan" -> st_extra.Manhattan |> decode.success
+    "Brooklyn" -> st_extra.Brooklyn |> decode.success
+    "Queens" -> st_extra.Queens |> decode.success
+    "Bronx" -> st_extra.Bronx |> decode.success
+    "StatenIsland" -> st_extra.StatenIsland |> decode.success
+    _ -> decode.failure(st_extra.Manhattan, "Borough")
+  }
+}
+
+fn borough_to_json(borough: st_extra.Borough) -> json.Json {
+  json.string(case borough {
+    st_extra.Manhattan -> "Manhattan"
+    st_extra.Brooklyn -> "Brooklyn"
+    st_extra.Queens -> "Queens"
+    st_extra.Bronx -> "Bronx"
+    st_extra.StatenIsland -> "StatenIsland"
+  })
+}
+
+fn route_decoder() -> decode.Decoder(Route) {
+  use long_id <- decode.then(decode.string)
+  case route.from_long_id(long_id) {
+    Ok(route) -> decode.success(route)
+    Error(Nil) -> decode.failure(route.A, "Route")
+  }
+}
+
+fn route_to_json(route: Route) -> json.Json {
+  let long_id = route.to_long_id(route)
+  json.string(long_id)
 }
