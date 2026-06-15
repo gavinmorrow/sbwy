@@ -42,7 +42,7 @@ pub fn main() -> Nil {
   io.println_error("Done.")
 }
 
-fn parse(file: String) -> Result(List(st_extra.Stop), ParseError) {
+fn parse(file: String) -> Result(List(#(String, st_extra.Stop)), ParseError) {
   // Parse the csv
   use rows <- result.try(
     file
@@ -76,23 +76,23 @@ type ParseError {
 }
 
 /// Converts the data to a gleam module
-fn output(data: List(st_extra.Stop)) -> String {
+fn output(data: List(#(String, st_extra.Stop))) -> String {
   "import gleam/dict
 import gleam/set.{from_list as set}
 
-import subway_gleam/gtfs/st.{
-  type StopId, A, B, C, D, E, F, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N7, Q, R,
-  S, Sf, Si, Sr, StopId, W, Z,
+import subway_gleam/gtfs/st/route.{
+  A, B, C, D, E, F, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N7, Q, R, S, Sf, Si,
+  Sr, W, Z,
 }
 import subway_gleam/gtfs/st_extra.{
   type Stop, Bronx, Brooklyn, Manhattan, Queens, StatenIsland, Stop,
 }
 
-pub fn data() -> dict.Dict(StopId, Stop) {
+pub fn data() -> dict.Dict(String, Stop) {
   dict.from_list([
 " <> {
     data
-    |> list.map(fn(stop) { "    " <> output_stop(stop) <> "," })
+    |> list.map(fn(stop) { "    " <> output_stop(stop.0, stop.1) <> "," })
     |> string.join(with: "\n")
   } <> "
   ])
@@ -100,8 +100,8 @@ pub fn data() -> dict.Dict(StopId, Stop) {
 "
 }
 
-fn output_stop(stop: st_extra.Stop) -> String {
-  let st_extra.Stop(id: id, borough:, daytime_routes:) = stop
+fn output_stop(id: String, stop: st_extra.Stop) -> String {
+  let st_extra.Stop(borough:, daytime_routes:) = stop
 
   let borough = case borough {
     st_extra.Manhattan -> "Manhattan"
@@ -150,11 +150,12 @@ fn output_stop(stop: st_extra.Stop) -> String {
     }
     <> "])"
 
-  let stop = "Stop(" <> id <> ", " <> borough <> ", " <> daytime_routes <> ")"
+  let id = "\"" <> id <> "\""
+  let stop = "Stop(" <> borough <> ", " <> daytime_routes <> ")"
   "#(" <> id <> ", " <> stop <> ")"
 }
 
-fn stop_decoder() -> decode.Decoder(st_extra.Stop) {
+fn stop_decoder() -> decode.Decoder(#(String, st_extra.Stop)) {
   use id <- decode.field("GTFS Stop ID", decode.string)
   use borough <- decode.field("Borough", borough_decoder())
   use daytime_routes <- decode.field(
@@ -162,7 +163,7 @@ fn stop_decoder() -> decode.Decoder(st_extra.Stop) {
     daytime_routes_decoder(borough),
   )
 
-  st_extra.Stop(id:, borough:, daytime_routes:) |> decode.success
+  #(id, st_extra.Stop(borough:, daytime_routes:)) |> decode.success
 }
 
 fn daytime_routes_decoder(
