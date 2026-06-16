@@ -14,7 +14,6 @@ const path = st.schedule_sample_data_path
 
 pub fn main() -> Nil {
   io.println_error("Fetching...")
-  // let assert Ok(bits) = st.fetch_bin(st.Regular)
   let assert Ok(bits) = simplifile.read_bits(from: "../gtfs_subway.zip")
   io.println_error("Parsing...")
   let st_extra_data = load_st_extra_data()
