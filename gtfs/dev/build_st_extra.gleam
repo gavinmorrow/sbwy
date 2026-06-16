@@ -5,13 +5,14 @@
 import gleam/dict
 import gleam/dynamic
 import gleam/dynamic/decode
+import gleam/function
 import gleam/io
+import gleam/json
 import gleam/list
 import gleam/result
 import gleam/set
 import gleam/string
 import gsv
-import shellout
 import simplifile
 
 import subway_gleam/gtfs/st/route.{type Route}
@@ -19,7 +20,7 @@ import subway_gleam/gtfs/st_extra
 
 const data_file_path = "./MTA_Subway_Stations.csv"
 
-const output_file_path = "./src/subway_gleam/gtfs/st_extra_data.gleam"
+const output_file_path = st_extra.data_file_path
 
 pub fn main() -> Nil {
   io.println_error("Reading file...")
@@ -31,13 +32,9 @@ pub fn main() -> Nil {
 
   // Write
   io.println_error("Generating code...")
-  let gleam_code = output(stops)
+  let output = to_json(stops) |> json.to_string
   io.println_error("Writing output...")
-  let assert Ok(Nil) = simplifile.write(gleam_code, to: output_file_path)
-
-  io.println_error("Checking code...")
-  let assert Ok(_) =
-    shellout.command("gleam", with: ["check"], in: ".", opt: [])
+  let assert Ok(Nil) = simplifile.write(output, to: output_file_path)
 
   io.println_error("Done.")
 }
@@ -75,84 +72,39 @@ type ParseError {
   DecodeError(List(decode.DecodeError))
 }
 
-/// Converts the data to a gleam module
-fn output(data: List(#(String, st_extra.Stop))) -> String {
-  "import gleam/dict
-import gleam/set.{from_list as set}
-
-import subway_gleam/gtfs/st/route.{
-  A, B, C, D, E, F, G, J, L, M, N, N1, N2, N3, N4, N5, N6, N7, Q, R, S, Sf, Si,
-  Sr, W, Z,
-}
-import subway_gleam/gtfs/st_extra.{
-  type Stop, Bronx, Brooklyn, Manhattan, Queens, StatenIsland, Stop,
+fn to_json(data: List(#(String, st_extra.Stop))) -> json.Json {
+  json.dict(dict.from_list(data), function.identity, stop_to_json)
 }
 
-pub fn data() -> dict.Dict(String, Stop) {
-  dict.from_list([
-" <> {
-    data
-    |> list.map(fn(stop) { "    " <> output_stop(stop.0, stop.1) <> "," })
-    |> string.join(with: "\n")
-  } <> "
+fn stop_to_json(stop: st_extra.Stop) -> json.Json {
+  let st_extra.Stop(borough:, daytime_routes:) = stop
+  json.object([
+    #("borough", borough_to_json(borough)),
+    #("daytime_routes", daytime_routes_to_json(daytime_routes)),
   ])
 }
-"
+
+fn borough_to_json(borough: st_extra.Borough) -> json.Json {
+  json.string(case borough {
+    st_extra.Manhattan -> "manhattan"
+    st_extra.Brooklyn -> "brooklyn"
+    st_extra.Queens -> "queens"
+    st_extra.Bronx -> "bronx"
+    st_extra.StatenIsland -> "staten_island"
+  })
 }
 
-fn output_stop(id: String, stop: st_extra.Stop) -> String {
-  let st_extra.Stop(borough:, daytime_routes:) = stop
-
-  let borough = case borough {
-    st_extra.Manhattan -> "Manhattan"
-    st_extra.Brooklyn -> "Brooklyn"
-    st_extra.Queens -> "Queens"
-    st_extra.Bronx -> "Bronx"
-    st_extra.StatenIsland -> "StatenIsland"
-  }
-  let daytime_routes =
-    "set(["
-    <> {
-      set.to_list(daytime_routes)
-      |> list.map(fn(route) {
-        case route {
-          route.N1 -> "N1"
-          route.N2 -> "N2"
-          route.N3 -> "N3"
-          route.N4 -> "N4"
-          route.N5 -> "N5"
-          route.N6 -> "N6"
-          route.N7 -> "N7"
-          route.A -> "A"
-          route.C -> "C"
-          route.E -> "E"
-          route.B -> "B"
-          route.D -> "D"
-          route.F -> "F"
-          route.M -> "M"
-          route.N -> "N"
-          route.Q -> "Q"
-          route.R -> "R"
-          route.W -> "W"
-          route.J -> "J"
-          route.Z -> "Z"
-          route.G -> "G"
-          route.L -> "L"
-          route.S -> "S"
-          route.Sr -> "Sr"
-          route.Sf -> "Sf"
-          route.Si -> "Si"
-          route.N6X | route.N7X | route.FX ->
-            panic as "express routes not allowed in daytime routes"
-        }
+fn daytime_routes_to_json(daytime_routes: set.Set(Route)) -> json.Json {
+  json.preprocessed_array(
+    set.to_list(daytime_routes)
+    |> list.map(fn(route) {
+      json.string(case route {
+        route.N6X | route.N7X | route.FX ->
+          panic as "express routes not allowed in daytime routes"
+        route -> route.to_long_id(route)
       })
-      |> string.join(with: ", ")
-    }
-    <> "])"
-
-  let id = "\"" <> id <> "\""
-  let stop = "Stop(" <> borough <> ", " <> daytime_routes <> ")"
-  "#(" <> id <> ", " <> stop <> ")"
+    }),
+  )
 }
 
 fn stop_decoder() -> decode.Decoder(#(String, st_extra.Stop)) {

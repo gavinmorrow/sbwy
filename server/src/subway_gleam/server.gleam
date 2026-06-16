@@ -28,6 +28,7 @@ import subway_gleam/server/route
 import subway_gleam/server/route/stop
 import subway_gleam/server/route/train
 import subway_gleam/server/sse_gtfs.{sse_gtfs}
+import subway_gleam/server/st_extra
 import subway_gleam/server/state
 import subway_gleam/server/state/gtfs_store
 import subway_gleam/shared/route/stop as shared_stop
@@ -63,13 +64,14 @@ pub fn start(sleeping_after sleep_after_ms: Result(Int, Nil)) -> Nil {
   )
 
   let assert Ok(priv_dir) = wisp.priv_directory("subway_gleam")
+  let st_extra_data = st_extra.load_data()
   let assert Ok(schedule) = {
     case gtfs_env.use_local_st() {
       True -> schedule_sample.schedule()
       False ->
         fetch_st.fetch_bin(st.Regular)
         |> result.map_error(st.HttpError)
-        |> result.try(st.parse)
+        |> result.try(st.parse(_, st_extra_data))
     }
   }
   let assert Ok(gtfs_store) = gtfs_store.new()

@@ -21,7 +21,6 @@ import subway_gleam/gtfs/st_extra
 import subway_gleam/gtfs/internal/decode_parse_str_field.{decode_parse_str_field}
 import subway_gleam/gtfs/internal/ffi
 import subway_gleam/gtfs/st/route.{type Route}
-import subway_gleam/gtfs/st_extra_data
 
 pub type Feed {
   /// This file represents the "normal" subway schedule and does not include
@@ -55,7 +54,10 @@ pub type FetchError {
   InvalidStopTimes
 }
 
-pub fn parse(bits: BitArray) -> Result(Schedule, FetchError) {
+pub fn parse(
+  bits: BitArray,
+  st_extra_data: st_extra.Data,
+) -> Result(Schedule, FetchError) {
   // unzipping
   use files <- result.try(ffi.unzip(bits) |> result.replace_error(UnzipError))
   let files = dict.from_list(files)
@@ -99,7 +101,6 @@ pub fn parse(bits: BitArray) -> Result(Schedule, FetchError) {
   use trips <- result.try(parse_file("trips.txt", trip_decoder()))
   let trips = trips_from_rows(trips)
 
-  let st_extra_data = st_extra_data.data()
   use stops <- result.try(parse_file("stops.txt", stop_decoder(st_extra_data)))
   let stops =
     list.fold(over: stops, from: dict.new(), with: fn(acc, stop) {

@@ -3,6 +3,7 @@ import gleam/string
 import shellout
 import simplifile
 import subway_gleam/gtfs/st
+import subway_gleam/server/st_extra
 
 const path = "src/subway_gleam/gtfs/st/schedule_sample"
 
@@ -120,7 +121,8 @@ pub fn main() -> Nil {
   // let assert Ok(bits) = st.fetch_bin(st.Regular)
   let assert Ok(bits) = simplifile.read_bits(from: "../gtfs_subway.zip")
   io.println_error("Parsing...")
-  let assert Ok(schedule) = st.parse(bits)
+  let st_extra_data = st_extra.load_data()
+  let assert Ok(schedule) = st.parse(bits, st_extra_data)
   io.println_error("Generating...")
 
   let stops_str =
