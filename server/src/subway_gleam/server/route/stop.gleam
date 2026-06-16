@@ -168,6 +168,8 @@ pub fn model(
     alert_summary:,
     uptown:,
     downtown:,
+    north_direction_label: stop.north_direction_label,
+    south_direction_label: stop.south_direction_label,
     highlighted_train:,
     event_source: live_status.Unavailable,
     cur_time:,

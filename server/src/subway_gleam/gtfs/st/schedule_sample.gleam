@@ -50,6 +50,14 @@ fn stops_decoder() -> decode.Decoder(dict.Dict(st.StopId, st.Stop)) {
       "daytime_routes",
       decode.list(of: route_decoder()) |> decode.map(set.from_list),
     )
+    use north_direction_label <- decode.field(
+      "north_direction_label",
+      decode.string,
+    )
+    use south_direction_label <- decode.field(
+      "south_direction_label",
+      decode.string,
+    )
 
     st.Stop(
       id:,
@@ -60,6 +68,8 @@ fn stops_decoder() -> decode.Decoder(dict.Dict(st.StopId, st.Stop)) {
       parent_station:,
       borough:,
       daytime_routes:,
+      north_direction_label:,
+      south_direction_label:,
     )
     |> decode.success
   })

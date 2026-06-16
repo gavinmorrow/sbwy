@@ -77,10 +77,17 @@ fn to_json(data: List(#(String, st_extra.Stop))) -> json.Json {
 }
 
 fn stop_to_json(stop: st_extra.Stop) -> json.Json {
-  let st_extra.Stop(borough:, daytime_routes:) = stop
+  let st_extra.Stop(
+    borough:,
+    daytime_routes:,
+    north_direction_label:,
+    south_direction_label:,
+  ) = stop
   json.object([
     #("borough", borough_to_json(borough)),
     #("daytime_routes", daytime_routes_to_json(daytime_routes)),
+    #("north_direction_label", json.string(north_direction_label)),
+    #("south_direction_label", json.string(south_direction_label)),
   ])
 }
 
@@ -114,8 +121,25 @@ fn stop_decoder() -> decode.Decoder(#(String, st_extra.Stop)) {
     "Daytime Routes",
     daytime_routes_decoder(borough),
   )
+  use north_direction_label <- decode.field(
+    "North Direction Label",
+    decode.string,
+  )
+  use south_direction_label <- decode.field(
+    "South Direction Label",
+    decode.string,
+  )
 
-  #(id, st_extra.Stop(borough:, daytime_routes:)) |> decode.success
+  #(
+    id,
+    st_extra.Stop(
+      borough:,
+      daytime_routes:,
+      north_direction_label:,
+      south_direction_label:,
+    ),
+  )
+  |> decode.success
 }
 
 fn daytime_routes_decoder(

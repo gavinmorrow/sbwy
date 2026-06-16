@@ -50,6 +50,8 @@ fn stops_to_json(stops: dict.Dict(st.StopId, st.Stop)) -> json.Json {
       parent_station:,
       borough:,
       daytime_routes:,
+      north_direction_label:,
+      south_direction_label:,
     ) = stop
     json.object([
       #("id", stop_id_to_json(id)),
@@ -63,6 +65,8 @@ fn stops_to_json(stops: dict.Dict(st.StopId, st.Stop)) -> json.Json {
         "daytime_routes",
         daytime_routes |> set.to_list |> json.array(of: route_to_json),
       ),
+      #("north_direction_label", json.string(north_direction_label)),
+      #("south_direction_label", json.string(south_direction_label)),
     ])
   })
 }

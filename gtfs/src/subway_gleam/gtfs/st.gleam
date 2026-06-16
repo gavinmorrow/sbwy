@@ -280,6 +280,8 @@ pub type Stop {
     /// The routes that "normally" (ie, daytime weekdays) stop at the stop.
     /// Does not account for rush hour express.
     daytime_routes: set.Set(Route),
+    north_direction_label: String,
+    south_direction_label: String,
   )
 }
 
@@ -317,7 +319,12 @@ fn stop_decoder(
       |> decode.map(option.Some),
   )
 
-  let assert Ok(st_extra.Stop(borough:, daytime_routes:)) =
+  let assert Ok(st_extra.Stop(
+    borough:,
+    daytime_routes:,
+    north_direction_label:,
+    south_direction_label:,
+  )) =
     dict.get(st_extra_data, case id {
       StopId(id) -> id
     })
@@ -331,6 +338,8 @@ fn stop_decoder(
     parent_station:,
     borough:,
     daytime_routes:,
+    north_direction_label:,
+    south_direction_label:,
   ))
 }
 

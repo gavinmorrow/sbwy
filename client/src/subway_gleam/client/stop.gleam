@@ -67,6 +67,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           alert_summary:,
           uptown:,
           downtown:,
+          north_direction_label:,
+          south_direction_label:,
           highlighted_train: _,
           event_source: _,
           cur_time: _,
@@ -82,6 +84,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             alert_summary:,
             uptown:,
             downtown:,
+            north_direction_label:,
+            south_direction_label:,
           ),
           effect.none(),
         )

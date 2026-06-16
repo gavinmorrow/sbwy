@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/).
 
 ## [Unreleased]
 
+## 2026-06-16
+
+- The direction labels are now customized per station, instead of always saying
+  "Uptown" or "Downtown".
+
+  For example, when viewing Jackson Hts-Roosevelt Av on the Queens Boulevard
+  Line, the two directions will be "Outbound" and "Manhattan".
+
 ## 2026-06-15
 
 ### Fixed

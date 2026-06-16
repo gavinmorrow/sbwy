@@ -169,6 +169,14 @@ fn stop_decoder() -> decode.Decoder(st.Stop) {
     "daytime_routes",
     decode.list(of: route_decoder()) |> decode.map(set.from_list),
   )
+  use north_direction_label <- decode.field(
+    "north_direction_label",
+    decode.string,
+  )
+  use south_direction_label <- decode.field(
+    "south_direction_label",
+    decode.string,
+  )
 
   st.Stop(
     id:,
@@ -179,6 +187,8 @@ fn stop_decoder() -> decode.Decoder(st.Stop) {
     parent_station: option.None,
     borough:,
     daytime_routes:,
+    north_direction_label:,
+    south_direction_label:,
   )
   |> decode.success
 }
@@ -193,6 +203,8 @@ fn stop_to_json(stop: st.Stop) -> json.Json {
     parent_station: _,
     borough:,
     daytime_routes:,
+    north_direction_label:,
+    south_direction_label:,
   ) = stop
   let st.StopId(id) = id
 
@@ -208,6 +220,8 @@ fn stop_to_json(stop: st.Stop) -> json.Json {
         daytime_routes |> set.to_list |> list.map(route_to_json),
       ),
     ),
+    #("north_direction_label", json.string(north_direction_label)),
+    #("south_direction_label", json.string(south_direction_label)),
   ])
 }
 

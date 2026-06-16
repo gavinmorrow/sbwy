@@ -36,6 +36,8 @@ pub type Model {
     alert_summary: String,
     uptown: List(Arrival),
     downtown: List(Arrival),
+    north_direction_label: String,
+    south_direction_label: String,
     highlighted_train: option.Option(rt.TripId),
     event_source: LiveStatus,
     cur_time: Time,
@@ -54,6 +56,8 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
     alert_summary:,
     uptown:,
     downtown:,
+    north_direction_label:,
+    south_direction_label:,
     highlighted_train:,
     event_source:,
     cur_time:,
@@ -117,11 +121,11 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
     // TODO: buttons for expand
     html.main([attribute.class("arrival-list-wrapper")], [
       html.div([], [
-        html.h2([], [html.text("Uptown")]),
+        html.h2([], [html.text(north_direction_label)]),
         keyed.ul([attribute.class("arrival-list")], uptown),
       ]),
       html.div([], [
-        html.h2([], [html.text("Downtown")]),
+        html.h2([], [html.text(south_direction_label)]),
         keyed.ul([attribute.class("arrival-list")], downtown),
       ]),
     ]),
@@ -149,6 +153,14 @@ pub fn model_decoder() -> decode.Decoder(Model) {
   )
   use uptown <- decode.field("uptown", decode.list(arrival_decoder()))
   use downtown <- decode.field("downtown", decode.list(arrival_decoder()))
+  use north_direction_label <- decode.field(
+    "north_direction_label",
+    decode.string,
+  )
+  use south_direction_label <- decode.field(
+    "south_direction_label",
+    decode.string,
+  )
   use cur_time <- decode.field("cur_time", time.decoder())
 
   decode.success(Model(
@@ -160,6 +172,8 @@ pub fn model_decoder() -> decode.Decoder(Model) {
     alert_summary:,
     uptown:,
     downtown:,
+    north_direction_label:,
+    south_direction_label:,
     highlighted_train:,
     event_source: live_status.Unavailable,
     cur_time:,
@@ -177,6 +191,8 @@ pub fn model_to_json(model: Model) -> json.Json {
     alert_summary:,
     uptown:,
     downtown:,
+    north_direction_label:,
+    south_direction_label:,
     highlighted_train:,
     // Can't encode an EventSource
     event_source: _,
@@ -202,6 +218,8 @@ pub fn model_to_json(model: Model) -> json.Json {
     ),
     #("uptown", json.array(uptown, arrival_to_json)),
     #("downtown", json.array(downtown, arrival_to_json)),
+    #("north_direction_label", json.string(north_direction_label)),
+    #("south_direction_label", json.string(south_direction_label)),
     #("cur_time", time.to_json(cur_time)),
   ])
 }
