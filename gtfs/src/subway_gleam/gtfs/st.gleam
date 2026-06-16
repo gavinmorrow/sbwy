@@ -22,6 +22,8 @@ import subway_gleam/gtfs/internal/decode_parse_str_field.{decode_parse_str_field
 import subway_gleam/gtfs/internal/ffi
 import subway_gleam/gtfs/st/route.{type Route}
 
+pub const schedule_sample_data_path = "./priv/schedule_sample.json"
+
 pub type Feed {
   /// This file represents the "normal" subway schedule and does not include
   /// most temporary service changes, though some long term service changes may
@@ -533,8 +535,13 @@ fn trip_decoder() -> decode.Decoder(Trip) {
   decode.success(Trip(id:, route_id:, headsign:, shape_id:))
 }
 
-pub opaque type ShapeId {
+pub type ShapeId {
   ShapeId(String)
+}
+
+pub fn shape_id_to_string(shape_id: ShapeId) {
+  let ShapeId(shape_id) = shape_id
+  shape_id
 }
 
 fn shape_id_decoder() -> decode.Decoder(ShapeId) {

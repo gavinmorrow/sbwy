@@ -18,6 +18,3 @@ server/priv/train.js
 
 # Temporary
 gtfs_subway.zip
-
-**/schedule_sample.gleam
-**/schedule_sample/**

@@ -28,11 +28,10 @@ To run the project: build the client, start the server, then go to
 
 If this is your first time running it, make sure that the env var are set to
 fetch from the internet and save the values to disk. After doing `gleam run`
-once followed by `gleam run -m gen_schedule` (inside of `server`), they will
-be saved, so development can continue locally without re-fetching and parsing
-each time. The folder `./gtfs/src/subway_gleam/gtfs/st/schedule_sample/` may
-need to be created. Disable fetch and save to disk afterwards, and only enable
-when needed.
+once followed by `gleam run -m gen_schedule` (inside of `gtfs`), they will be
+saved, so development can continue locally without re-fetching and parsing each
+time. The folder `./gtfs/priv/` may need to be created. Disable fetch and save
+to disk afterwards, and only enable when needed.
 
 ### Env vars
 
