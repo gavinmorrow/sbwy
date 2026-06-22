@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/).
 
 ## 2026-06-16
 
+### Changed
+
 - The direction labels are now customized per station, instead of always saying
   "Uptown" or "Downtown".
 
