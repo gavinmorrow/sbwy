@@ -55,6 +55,16 @@ to disk afterwards, and only enable when needed.
 | `profile_pages`   | Which pages to enable eflame profiling for.       |
 | `profile_funcs`   | If `true`, log the duration of certain functions. |
 
+#### Log Levels
+
+This project uses the Erlang logger. The levels are
+emergency/alert/critical/error/warning/notice/info/debug.
+
+#### Profiling
+
+For `profile_pages`, it is a comma-separated list with potential values of:
+`stops`, `stop`, `stop_alerts`, and `train`.
+
 ### Extra st data
 
 Some data about stations (e.g. what borough they are in) is semi-manually
@@ -68,13 +78,3 @@ If a station is added or removed to the subway (or the data otherwise changes):
    <https://catalog.data.gov/dataset/mta-subway-stations> and save it into
    `./MTA_Subway_Stations.csv`.
 3. Run `gleam run -m build_st_extra`.
-
-#### Log Levels
-
-This project uses the Erlang logger. The levels are
-emergency/alert/critical/error/warning/notice/info/debug.
-
-#### Profiling
-
-For `profile_pages`, it is a comma-separated list with potential values of:
-`stops`, `stop`, `stop_alerts`, and `train`.
