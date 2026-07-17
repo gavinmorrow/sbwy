@@ -6,6 +6,9 @@ It sends over server-side rendered HTML pages using lustre, which are then
 hydrated (if possible) on the client. It aims to be progressively enhanced, and
 work without javascript enabled.
 
+This project is mirrored between [GitHub](https://github.com/gavinmorrow/sbwy) and
+[Tangled](https://tangled.org/did:plc:tl2btz6plz46c2df422tvhbc).
+
 ## Subprojects
 
 - `server`: The code for the HTTP server. Targets Erlang. Run via
