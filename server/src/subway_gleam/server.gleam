@@ -112,7 +112,7 @@ pub fn start(sleeping_after sleep_after_ms: Result(Int, Nil)) -> Nil {
     _, _ ->
       mist_handler(_, state, wisp_handler)
       |> mist.new
-      |> mist.bind(env.host())
+      |> mist.bind(host)
       |> mist.port(http_port)
       |> mist.start
   }
