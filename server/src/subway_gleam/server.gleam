@@ -1,4 +1,5 @@
 import eflame
+import ewe
 import gleam/erlang/process
 import gleam/float
 import gleam/http/request
@@ -9,11 +10,10 @@ import gleam/option
 import gleam/result
 import gleam/string
 import logging
-import mist
 import repeatedly
 import tzif/database as tzif
 import wisp
-import wisp/wisp_mist
+import wisp/wisp_ewe
 
 import subway_gleam/gtfs/env as gtfs_env
 import subway_gleam/gtfs/st
@@ -87,7 +87,7 @@ pub fn start(sleeping_after sleep_after_ms: Result(Int, Nil)) -> Nil {
   })
 
   let secret_key_base = wisp.random_string(64)
-  let wisp_handler = wisp_mist.handler(handler(state, _), secret_key_base)
+  let wisp_handler = wisp_ewe.handler(handler(state, _), secret_key_base)
 
   let host = env.host()
   let http_port = env.http_port()
@@ -101,20 +101,25 @@ pub fn start(sleeping_after sleep_after_ms: Result(Int, Nil)) -> Nil {
     ]),
   )
 
+  let listener_name = process.new_name("sbwy_listener")
+  let connection_factory_name = process.new_name("sbwy_connection_factory")
+  let handler = ewe_handler(_, state, wisp_handler)
+  let server =
+    ewe.new(listener_name:, connection_factory_name:, handler:)
+    |> ewe.bind(to: host)
+    |> ewe.with_http2(
+      ewe.Http2Options(..ewe.default_http2_options(), websocket: True),
+    )
   let assert Ok(_service) = case env.certfile(), env.keyfile() {
     Ok(certfile), Ok(keyfile) ->
-      mist_handler(_, state, wisp_handler)
-      |> mist.new
-      |> mist.bind(host)
-      |> mist.port(https_port)
-      |> mist.with_tls(certfile:, keyfile:)
-      |> mist.start
+      server
+      |> ewe.listening(on: https_port)
+      |> ewe.with_tls(ewe.Disk(cert: certfile, key: keyfile))
+      |> ewe.start
     _, _ ->
-      mist_handler(_, state, wisp_handler)
-      |> mist.new
-      |> mist.bind(host)
-      |> mist.port(http_port)
-      |> mist.start
+      server
+      |> ewe.listening(on: http_port)
+      |> ewe.start
   }
 
   case sleep_after_ms {
@@ -136,12 +141,12 @@ pub fn start(sleeping_after sleep_after_ms: Result(Int, Nil)) -> Nil {
 // This is done b/c wisp doesn't support some features (e.g. websockets,
 // server-sent events). So for routes that use the features wisp does support,
 // they go in the wisp handler. Otherwise, they go here.
-fn mist_handler(
-  req: request.Request(mist.Connection),
+fn ewe_handler(
+  req: request.Request(ewe.Connection),
   state_ref: state.Ref,
-  wisp_handler: fn(request.Request(mist.Connection)) ->
-    response.Response(mist.ResponseData),
-) -> response.Response(mist.ResponseData) {
+  wisp_handler: fn(request.Request(ewe.Connection)) ->
+    response.Response(ewe.Body),
+) -> response.Response(ewe.Body) {
   use <- log.time("mist_handler")
   let state = state.get(state_ref)
   case request.path_segments(req) {
