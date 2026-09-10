@@ -8,7 +8,8 @@ import gleam/set
 
 import subway_gleam/gtfs/st/route.{type Route}
 
-pub const data_file_path: String = "./priv/st_extra.json"
+/// The path inside of the `priv` directory.
+pub const data_file_path: String = "/st_extra.json"
 
 pub type Data =
   dict.Dict(String, Stop)
