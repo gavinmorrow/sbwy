@@ -75,3 +75,14 @@ If a station is added or removed to the subway (or the data otherwise changes):
    <https://catalog.data.gov/dataset/mta-subway-stations> and save it into
    `./MTA_Subway_Stations.csv`.
 3. Run `gleam run -m build_st_extra`.
+
+## Deploying
+
+Locally:
+
+1. `just build`
+2. `cd server`
+3. `gleam export erlang-shipment`
+4. `rsync -r ./build/erlang-shipment/ user@example.com:/home/user/sbwy`
+
+On the server: `log_tz_offset="-4" ~/sbwy/entrypoint.sh run`
