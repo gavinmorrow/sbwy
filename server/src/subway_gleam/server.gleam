@@ -1,12 +1,14 @@
 import eflame
 import ewe
+import gleam/erlang/atom.{type Atom}
 import gleam/erlang/process
-import gleam/float
 import gleam/http/request
 import gleam/http/response
 import gleam/int
 import gleam/list
 import gleam/option
+import gleam/otp/actor
+import gleam/otp/static_supervisor as supervisor
 import gleam/result
 import gleam/string
 import logging
@@ -35,12 +37,32 @@ import subway_gleam/shared/route/stop as shared_stop
 import subway_gleam/shared/route/train as shared_train
 
 pub fn main() -> Nil {
-  start(sleeping_after: Error(Nil))
+  // The application is already running by the time this is called, so all main
+  // has left to do is keep the node alive.
+  log.debug("Main process sleeping forever...", with: log.new_context())
+  process.sleep_forever()
+}
+
+pub fn start(_type: a, _args: b) -> Result(process.Pid, actor.StartError) {
+  let server = server()
+  let supervisor =
+    supervisor.new(supervisor.OneForOne)
+    |> supervisor.add(ewe.supervised(server))
+    |> supervisor.start
+
+  case supervisor {
+    Ok(actor.Started(pid:, data: _)) -> Ok(pid)
+    Error(reason) -> Error(reason)
+  }
+}
+
+pub fn stop(_state: a) -> Atom {
+  atom.create("ok")
 }
 
 // The sleeping_after parameter exists so that the server automatically shuts
 // down after a given amount of time when profiling.
-pub fn start(sleeping_after sleep_after_ms: Result(Int, Nil)) -> Nil {
+pub fn server() -> ewe.Builder {
   wisp.configure_logger()
   configure_logger()
 
@@ -110,31 +132,14 @@ pub fn start(sleeping_after sleep_after_ms: Result(Int, Nil)) -> Nil {
     |> ewe.with_http2(
       ewe.Http2Options(..ewe.default_http2_options(), websocket: True),
     )
-  let assert Ok(_service) = case env.certfile(), env.keyfile() {
+  case env.certfile(), env.keyfile() {
     Ok(certfile), Ok(keyfile) ->
       server
       |> ewe.listening(on: https_port)
       |> ewe.with_tls(ewe.Disk(cert: certfile, key: keyfile))
-      |> ewe.start
     _, _ ->
       server
       |> ewe.listening(on: http_port)
-      |> ewe.start
-  }
-
-  case sleep_after_ms {
-    Ok(ms) -> {
-      let sec = int.to_float(ms) /. 1000.0
-      log.debug(
-        "Main process sleeping for " <> float.to_string(sec) <> "sec...",
-        with: log.new_context(),
-      )
-      process.sleep(ms)
-    }
-    Error(Nil) -> {
-      log.debug("Main process sleeping forever...", with: log.new_context())
-      process.sleep_forever()
-    }
   }
 }
 
