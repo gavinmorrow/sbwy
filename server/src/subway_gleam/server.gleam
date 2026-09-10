@@ -2,6 +2,7 @@ import eflame
 import ewe
 import gleam/erlang/atom.{type Atom}
 import gleam/erlang/process
+import gleam/http
 import gleam/http/request
 import gleam/http/response
 import gleam/int
@@ -128,6 +129,27 @@ pub fn server() -> ewe.Builder {
     ewe.Http2Options(..ewe.default_http2_options(), websocket: True),
   )
   |> ewe.listening(on: port)
+  |> ewe.on_start(fn(scheme, address) {
+    // Mostly copied from ewe, but modified to use our log functions.
+    case address {
+      ewe.TcpSocketAddress(ip_address:, port:) -> {
+        let host = case ip_address {
+          ewe.IpV6(..) -> "[" <> ewe.ip_address_to_string(ip_address) <> "]"
+          ewe.IpV4(..) -> ewe.ip_address_to_string(ip_address)
+        }
+
+        let url =
+          http.scheme_to_string(scheme)
+          <> "://"
+          <> host
+          <> ":"
+          <> int.to_string(port)
+        log.notice("Server listening.", log.context([#("url", url)]))
+      }
+      ewe.UnixSocketAddress(path:) ->
+        log.notice("Server listening.", log.context([#("unix", path)]))
+    }
+  })
 }
 
 // This is done b/c wisp doesn't support some features (e.g. websockets,
