@@ -10,24 +10,10 @@ pub fn host() -> String {
   |> result.unwrap(or: "127.0.0.1")
 }
 
-pub fn http_port() -> Int {
-  envoy.get("http_port")
+pub fn port() -> Int {
+  envoy.get("port")
   |> result.try(int.parse)
   |> result.unwrap(or: 8080)
-}
-
-pub fn https_port() -> Int {
-  envoy.get("https_port")
-  |> result.try(int.parse)
-  |> result.unwrap(or: 4433)
-}
-
-pub fn certfile() -> Result(String, Nil) {
-  envoy.get("certfile")
-}
-
-pub fn keyfile() -> Result(String, Nil) {
-  envoy.get("keyfile")
 }
 
 pub fn log_level() {

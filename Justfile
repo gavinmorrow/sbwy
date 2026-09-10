@@ -25,7 +25,7 @@ build-page name:
 start-prof:
     # Set these env vars here to override .env file
     # the [env()] attribute doesn't seem to override
-    https_port=3000 http_port=3003 gtfs_st="local" gleam run -m server_prof
+    http_port=3003 gtfs_st="local" gleam run -m server_prof
 
 [working-directory: 'server']
 start-stop-prof:

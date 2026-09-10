@@ -41,10 +41,7 @@ to disk afterwards, and only enable when needed.
 | name              | description                                       |
 | ----------------- | ------------------------------------------------- | 
 | `host`            | The interface to bind to when starting the server |
-| `http_port`       | The port to bind to for the HTTP server           |
-| `https_port`      | The port to bind to for the HTTPS server          |
-| `certfile`        | Path to the `.crt` file. leave unset for no TLS. relative to `server`. |
-| `keyfile`         | Path to the `.key` file. leave unset for no TLS. relative to `server`. |
+| `port`            | The port to bind to when starting the server      |
 | `gtfs_st`         | If "local": use the cached st data.               |
 | `gtfs_rt`         | If "local": use the cached rt data.               |
 | `save_fetched_st` | If "true": write fetched st data to disk.         |

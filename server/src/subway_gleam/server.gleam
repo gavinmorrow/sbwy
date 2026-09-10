@@ -75,10 +75,7 @@ pub fn server() -> ewe.Builder {
       #("save_fetched_rt", gtfs_env.save_fetched_rt() |> string.inspect),
       #("gtfs_rt_fetch_time", gtfs_env.rt_time() |> string.inspect),
       #("host", env.host()),
-      #("http_port", env.http_port() |> string.inspect),
-      #("https_port", env.https_port() |> string.inspect),
-      #("certfile", env.certfile() |> string.inspect),
-      #("keyfile", env.keyfile() |> string.inspect),
+      #("port", env.port() |> string.inspect),
       #("log_level", env.log_level() |> string.inspect),
       #("log_tz_offset", env.log_tz_offset() |> string.inspect),
       #("profile_pages", env.profile_pages() |> string.inspect),
@@ -112,35 +109,25 @@ pub fn server() -> ewe.Builder {
   let wisp_handler = wisp_ewe.handler(handler(state, _), secret_key_base)
 
   let host = env.host()
-  let http_port = env.http_port()
-  let https_port = env.https_port()
+  let port = env.port()
   log.debug(
     "Starting server...",
     with: log.context([
       #("host", host),
-      #("http_port", http_port |> int.to_string),
-      #("https_port", https_port |> int.to_string),
+      #("port", port |> int.to_string),
     ]),
   )
 
   let listener_name = process.new_name("sbwy_listener")
   let connection_factory_name = process.new_name("sbwy_connection_factory")
   let handler = ewe_handler(_, state, wisp_handler)
-  let server =
-    ewe.new(listener_name:, connection_factory_name:, handler:)
-    |> ewe.bind(to: host)
-    |> ewe.with_http2(
-      ewe.Http2Options(..ewe.default_http2_options(), websocket: True),
-    )
-  case env.certfile(), env.keyfile() {
-    Ok(certfile), Ok(keyfile) ->
-      server
-      |> ewe.listening(on: https_port)
-      |> ewe.with_tls(ewe.Disk(cert: certfile, key: keyfile))
-    _, _ ->
-      server
-      |> ewe.listening(on: http_port)
-  }
+
+  ewe.new(listener_name:, connection_factory_name:, handler:)
+  |> ewe.bind(to: host)
+  |> ewe.with_http2(
+    ewe.Http2Options(..ewe.default_http2_options(), websocket: True),
+  )
+  |> ewe.listening(on: port)
 }
 
 // This is done b/c wisp doesn't support some features (e.g. websockets,
