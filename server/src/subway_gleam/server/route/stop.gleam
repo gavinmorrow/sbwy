@@ -107,14 +107,21 @@ pub fn model(
     // TODO: also need to sort each group in sort order
     |> set.to_list
 
-  let gtfs_store.Data(current: gtfs, last_updated:) = state.fetch_gtfs(state)
+  let data = state.fetch_gtfs(state)
 
   // Add in alerts from arrivals.
   // Needed b/c if a train is rerouted then alerts from that train should be
   // shown at this stop.
-  let routes = set.union(of: routes, and: rt.routes_arriving(gtfs, at: stop_id))
+  let routes =
+    set.union(
+      of: routes,
+      and: gtfs_store.arrivals(data, for: stop_id) |> rt.routes_arriving,
+    )
 
-  let alerts = filter_alerts(gtfs, routes, stop_id)
+  let alerts =
+    gtfs_store.alerts(data)
+    |> result.map(filter_alerts(_, routes, stop_id))
+    |> result.unwrap(or: [])
   let alerted_routes =
     list.fold(over: alerts, from: set.new(), with: fn(acc, alert) {
       set.union(of: acc, and: rt.routes_in_alert(alert))
@@ -135,15 +142,15 @@ pub fn model(
   }
 
   let #(uptown, downtown) =
-    gtfs.arrivals
-    |> dict.get(stop_id)
+    gtfs_store.arrivals(data, for: stop_id)
     |> result.unwrap(or: [])
     |> list.sort(by: fn(a, b) {
       timestamp.compare(a.1.time, b.1.time) |> order.negate
     })
     |> list.fold(from: #([], []), with: fn(acc, update) {
       let #(uptown_acc, downtown_acc) = acc
-      let li = arrival_li(update, state.schedule, gtfs)
+      let li =
+        arrival_li(update, state.schedule, gtfs_store.final_stop(data, for: _))
       case update.1.direction {
         st.North -> #([li, ..uptown_acc], downtown_acc)
         st.South -> #(uptown_acc, [li, ..downtown_acc])
@@ -153,6 +160,9 @@ pub fn model(
   // let downtown = downtown |> list.take(from: _, up_to: 10)
 
   let cur_time = time_zone.now(state.tz_db)
+  let last_updated =
+    gtfs_store.last_updated(data)
+    |> result.unwrap(or: timestamp.unix_epoch)
   let last_updated =
     time.Time(
       last_updated,
@@ -180,13 +190,13 @@ pub fn model(
 // TODO: do this processing for every alert as part of processing rt data.
 //       it adds slightly noticable lag to each request
 pub fn filter_alerts(
-  gtfs: rt.Data,
+  alerts: List(rt.Alert),
   routes: set.Set(Route),
   stop_id: st.StopId,
 ) -> List(rt.Alert) {
   let current_time = util.current_time()
   let alerts =
-    gtfs.alerts
+    alerts
     |> list.filter(fn(alert) {
       use period <- list.any(in: alert.active_periods)
 
@@ -262,7 +272,7 @@ pub fn error_unknown_stop(
 fn arrival_li(
   update: #(rt.Trip, rt.TrainStopping),
   schedule: st.Schedule,
-  gtfs: rt.Data,
+  get_final_stop: fn(st.ShapeId) -> Result(st.StopId, Nil),
 ) -> stop.Arrival {
   let #(trip, rt.TrainStopping(time:, stop_id:, direction:)) = update
 
@@ -271,7 +281,7 @@ fn arrival_li(
     schedule.trips.headsigns
     |> dict.get(shape_id)
     |> result.lazy_or(fn() {
-      dict.get(gtfs.final_stops, shape_id)
+      get_final_stop(shape_id)
       |> result.try(dict.get(schedule.stops, _))
       |> result.map(fn(stop) { stop.name })
       // TODO: maybe don't want to always have a value?

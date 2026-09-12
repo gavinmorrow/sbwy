@@ -3,6 +3,7 @@ import gleam/list
 import gleam/option
 import gleam/result
 import gleam/set
+import gleam/time/timestamp
 import lustre/attribute
 import lustre/element/html
 import wisp
@@ -40,13 +41,16 @@ pub fn alerts(
   let route =
     route_id |> option.to_result(Nil) |> result.try(route.from_long_id)
 
-  let gtfs_store.Data(current: gtfs, last_updated:) = state.fetch_gtfs(state)
+  let data = state.fetch_gtfs(state)
 
   // Add in alerts from arrivals.
   // Needed b/c if a train is rerouted then alerts from that train should be
   // shown at this stop.
   let all_routes =
-    set.union(of: all_routes, and: rt.routes_arriving(gtfs, at: stop_id))
+    set.union(
+      of: all_routes,
+      and: gtfs_store.arrivals(data, for: stop_id) |> rt.routes_arriving,
+    )
 
   let routes = case route {
     Ok(route) -> set.new() |> set.insert(route)
@@ -54,12 +58,17 @@ pub fn alerts(
   }
 
   let alerts =
-    stop.filter_alerts(gtfs, routes, stop_id)
+    gtfs_store.alerts(data)
+    |> result.unwrap(or: [])
+    |> stop.filter_alerts(routes, stop_id)
     |> list.map(rt_alert_to_model_alert(_, state))
   let all_routes =
     set.map(all_routes, with: st.route_data(in: state.schedule, for: _))
 
   let cur_time = time_zone.now(state.tz_db)
+  let last_updated =
+    gtfs_store.last_updated(data)
+    |> result.unwrap(or: timestamp.unix_epoch)
   let last_updated =
     time.Time(
       last_updated,

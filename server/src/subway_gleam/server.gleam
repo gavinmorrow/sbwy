@@ -10,6 +10,7 @@ import gleam/list
 import gleam/option
 import gleam/otp/actor
 import gleam/otp/static_supervisor as supervisor
+import gleam/otp/supervision
 import gleam/result
 import gleam/string
 import logging
@@ -48,6 +49,7 @@ pub fn start(_type: a, _args: b) -> Result(process.Pid, actor.StartError) {
   let server = server()
   let supervisor =
     supervisor.new(supervisor.OneForOne)
+    |> supervisor.add(gtfs_store())
     |> supervisor.add(ewe.supervised(server))
     |> supervisor.start
 
@@ -59,6 +61,21 @@ pub fn start(_type: a, _args: b) -> Result(process.Pid, actor.StartError) {
 
 pub fn stop(_state: a) -> Atom {
   atom.create("ok")
+}
+
+fn gtfs_store() -> supervision.ChildSpecification(Nil) {
+  supervision.ChildSpecification(
+    start: fn() {
+      actor.new_with_initialiser(100, fn(_self) {
+        gtfs_store.init()
+        Ok(actor.initialised(Nil))
+      })
+      |> actor.start
+    },
+    restart: supervision.Permanent,
+    significant: False,
+    child_type: supervision.Worker(100),
+  )
 }
 
 // The sleeping_after parameter exists so that the server automatically shuts
@@ -94,7 +111,7 @@ pub fn server() -> ewe.Builder {
         |> result.try(st.parse(_, st_extra_data))
     }
   }
-  let assert Ok(gtfs_store) = gtfs_store.new()
+  let gtfs_store = gtfs_store.new()
   let assert Ok(tz_db) = tzif.load_from_os()
   let state = state.State(priv_dir:, schedule:, gtfs_store:, tz_db:)
   let state = state.ref(from: state)

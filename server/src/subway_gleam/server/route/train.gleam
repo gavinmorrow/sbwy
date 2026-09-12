@@ -65,11 +65,11 @@ pub fn model(
     |> result.map(pair.first)
     |> option.from_result
 
-  let gtfs_store.Data(current: gtfs, last_updated:) = state.fetch_gtfs(state)
+  let data = state.fetch_gtfs(state)
 
   let trip_id = rt.TripId(trip_id)
   let trip =
-    dict.get(gtfs.trips, trip_id)
+    gtfs_store.trip(data, for: trip_id)
     |> result.replace_error(
       CouldNotFindTrain(trip_id: rt.trip_id_to_string(trip_id)),
     )
@@ -113,6 +113,9 @@ pub fn model(
     })
 
   let cur_time = time_zone.now(state.tz_db)
+  let last_updated =
+    gtfs_store.last_updated(data)
+    |> result.unwrap(or: timestamp.unix_epoch)
   let last_updated =
     time.Time(
       last_updated,

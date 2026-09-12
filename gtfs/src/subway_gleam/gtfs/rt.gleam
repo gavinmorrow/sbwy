@@ -299,11 +299,10 @@ fn parse_trip_update(
 }
 
 /// Extracts the routes of all trains in the arrivals list for a given stop.
-pub fn routes_arriving(gtfs: Data, at stop: st.StopId) -> set.Set(Route) {
-  let arrivals =
-    gtfs.arrivals
-    |> dict.get(stop)
-    |> result.unwrap(or: [])
+pub fn routes_arriving(
+  arrivals: Result(List(#(Trip, train_stopping)), Nil),
+) -> set.Set(Route) {
+  let arrivals = result.unwrap(arrivals, or: [])
 
   list.fold(over: arrivals, from: set.new(), with: fn(acc, arrival) {
     let #(trip, _train_stopping) = arrival
