@@ -67,7 +67,7 @@ fn gtfs_store() -> supervision.ChildSpecification(Nil) {
   supervision.ChildSpecification(
     start: fn() {
       actor.new_with_initialiser(100, fn(_self) {
-        gtfs_store.init()
+        gtfs_store.init() |> gtfs_store.update
         Ok(actor.initialised(Nil))
       })
       |> actor.start

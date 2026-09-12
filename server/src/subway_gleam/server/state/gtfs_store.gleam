@@ -1,8 +1,10 @@
 import gleam/dict
 import gleam/erlang/atom
 import gleam/erlang/process
+import gleam/int
 import gleam/list
 import gleam/result
+import gleam/time/duration
 import gleam/time/timestamp.{type Timestamp}
 
 import subway_gleam/gtfs/rt
@@ -31,25 +33,29 @@ pub opaque type Data {
 
 /// **Must be called at most once**, or an error will be thrown because the
 /// tables already exist.
-pub fn init() {
-  table.new("arrivals" |> atom.create)
-  table.new("final_stops" |> atom.create)
-  table.new("trips" |> atom.create)
-  table.new("alerts" |> atom.create)
-  table.new("last_updated" |> atom.create)
-  |> table.insert(timestamp.unix_epoch, for: Nil)
-  table.new("watchers" |> atom.create)
+pub fn init() -> GtfsStore {
+  GtfsStore(
+    data: Data(
+      table.new("arrivals" |> atom.create),
+      table.new("final_stops" |> atom.create),
+      table.new("trips" |> atom.create),
+      table.new("alerts" |> atom.create),
+      table.new("last_updated" |> atom.create)
+        |> table.insert(timestamp.unix_epoch, for: Nil),
+    ),
+    watchers: table.new("watchers" |> atom.create),
+  )
 }
 
 /// This cannot be used until *after* `init()` is called.
 pub fn new() -> GtfsStore {
   let data =
     Data(
-      arrivals: table.from_name("arrivals" |> atom.create),
-      final_stops: table.from_name("final_stops" |> atom.create),
-      trips: table.from_name("trips" |> atom.create),
-      alerts: table.from_name("alerts" |> atom.create),
-      last_updated: table.from_name("last_updated" |> atom.create),
+      table.from_name("arrivals" |> atom.create),
+      table.from_name("final_stops" |> atom.create),
+      table.from_name("trips" |> atom.create),
+      table.from_name("alerts" |> atom.create),
+      table.from_name("last_updated" |> atom.create),
     )
   let watchers = table.from_name("watchers" |> atom.create)
   GtfsStore(data:, watchers:)
@@ -60,6 +66,7 @@ pub fn get(from store: GtfsStore) -> Data {
 }
 
 pub fn update(store: GtfsStore) -> Nil {
+  let start_time = timestamp.system_time()
   log.debug("Starting gtfs rt update...", with: log.new_context())
   // TODO: is this OTP compliant?
   // If this process crashes it shouldn't take down the main process
@@ -84,6 +91,18 @@ pub fn update(store: GtfsStore) -> Nil {
     // Notify watchers
     store.watchers
     |> table.each(fn(subject, _: Nil) { process.send(subject, Nil) })
+
+    let end_time = timestamp.system_time()
+    let duration = timestamp.difference(start_time, end_time)
+    log.debug(
+      "Finished gtfs rt update.",
+      with: log.context([
+        #(
+          "duration",
+          duration.to_milliseconds(duration) |> int.to_string <> "ms",
+        ),
+      ]),
+    )
   })
   Nil
 }
