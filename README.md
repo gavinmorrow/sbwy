@@ -86,3 +86,10 @@ Locally:
 4. `rsync -r ./build/erlang-shipment/ user@example.com:/home/user/sbwy`
 
 On the server: `log_tz_offset="-4" ~/sbwy/entrypoint.sh run`
+
+### Updating nginx config
+
+1. `rsync nginx.conf user@example.com:/home/usr/nginx.conf`
+2. SSH into server
+3. To verify config: `sudo nginx -t`
+4. To reload config: `sudo nginx -s reload`
