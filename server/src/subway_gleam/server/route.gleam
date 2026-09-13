@@ -19,9 +19,16 @@ pub fn index(req: wisp.Request) -> wisp.Response {
       html.a([attribute.href("/stops/")], [html.text("stops nearby")]),
     ]),
     html.p([], [
-      html.a([attribute.href("https://github.com/gavinmorrow/sbwy/")], [
-        html.text("github"),
-      ]),
+      html.text("if you're not in new york, check out "),
+      html.a([attribute.href("/stop/R16/")], [html.text("times square")]),
+    ]),
+    html.p([], [
+      html.a(
+        [attribute.href("https://tangled.org/did:plc:tl2btz6plz46c2df422tvhbc")],
+        [
+          html.text("view source on tangled"),
+        ],
+      ),
     ]),
     navbar(),
   ]
