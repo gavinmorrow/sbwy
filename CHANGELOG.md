@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/).
 
 ## [Unreleased]
 
+## 2026-09-13
+
+### Changed
+
+- There is now more information on the index page, and it now points to the
+  Tangled repo instead of the GitHub one.
+- All pages should load very slightly faster (3–5ms or so in the median, but
+  30–80ms on the high end). It's just barely noticable if they're side by side.
+  Enjoy :]
+
 ## 2026-06-16
 
 ### Changed
