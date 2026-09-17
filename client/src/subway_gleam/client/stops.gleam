@@ -69,7 +69,7 @@ fn init(flags: Model) -> #(Model, effect.Effect(Msg)) {
   #(flags, watch_position())
 }
 
-fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
+pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
     UpdatePosition(cur_position) -> #(
       Model(..model, cur_position: option.Some(cur_position)),

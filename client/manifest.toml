@@ -62,6 +62,7 @@ gleam_json = { version = ">= 3.1.0 and < 4.0.0" }
 gleam_stdlib = { version = ">= 1.0.3 and < 2.0.0" }
 gleam_time = { version = ">= 1.7.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
+gtfs = { path = "../gtfs" }
 lustre = { version = ">= 5.5.2 and < 6.0.0" }
 lustre_dev_tools = { version = ">= 2.3.6 and < 3.0.0" }
 lustre_event_source = { git = "https://github.com/gavinmorrow/lustre_event_source", ref = "e430a97a86e4" }

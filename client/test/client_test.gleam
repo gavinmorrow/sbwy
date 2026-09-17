@@ -1,13 +1,10 @@
 import gleeunit
+import stops_test
 
 pub fn main() -> Nil {
   gleeunit.main()
 }
 
-// gleeunit test functions end in `_test`
-pub fn hello_world_test() {
-  let name = "Joe"
-  let greeting = "Hello, " <> name <> "!"
-
-  assert greeting == "Hello, Joe!"
+pub fn stops_shows_nearby_stops_test() {
+  stops_test.shows_nearby_stops_test()
 }

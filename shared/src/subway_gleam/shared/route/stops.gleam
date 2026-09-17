@@ -7,6 +7,7 @@ import gleam/list
 import gleam/option
 import gleam/result
 import gleam/set
+import gleam/time/timestamp
 import lustre/attribute
 import lustre/element
 import lustre/element/html
@@ -39,8 +40,8 @@ pub fn view(model: Model) -> element.Element(msg) {
   //     latitude: 40.7127667,
   //     longitude: -74.0060544,
   //     accuracy: 10.0,
-  //     // Okay to use current time bc this is for debugging
-  //     timestamp: util.current_time(),
+  //     // Okay to use epoch bc this is for debugging
+  //     timestamp: timestamp.unix_epoch,
   //   )
   //   |> option.Some
 
