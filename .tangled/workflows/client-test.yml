@@ -8,6 +8,7 @@ image: nixos
 dependencies:
   - gleam
   - erlang
+  - nodejs
   - just
 
 cache:
