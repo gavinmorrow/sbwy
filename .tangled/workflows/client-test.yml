@@ -18,7 +18,5 @@ cache:
       - client/build/packages
 
 steps:
-  - name: Build
-    command: "just build"
   - name: Test
     command: "just client test"
