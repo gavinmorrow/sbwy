@@ -1,5 +1,4 @@
 set dotenv-load
-set dotenv-required
 
 check: (server "check") (client "check")
 
