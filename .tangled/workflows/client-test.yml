@@ -1,0 +1,23 @@
+when:
+  - event: [push, pull_request, manual]
+    branch: [main]
+
+engine: microvm
+image: nixos
+
+dependencies:
+  - gleam
+  - just
+
+cache:
+  - key: deps
+    hash:
+      - client/manifest.toml
+    paths:
+      - client/build/packages
+
+steps:
+  - name: Build
+    command: "just build"
+  - name: Test
+    command: "just client test"
