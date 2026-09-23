@@ -7,7 +7,6 @@ import gleam/list
 import gleam/option
 import gleam/result
 import gleam/set
-import gleam/time/timestamp
 import lustre/attribute
 import lustre/element
 import lustre/element/html
