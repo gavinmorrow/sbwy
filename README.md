@@ -12,14 +12,15 @@ This project is mirrored between [GitHub](https://github.com/gavinmorrow/sbwy) a
 ## Subprojects
 
 - `server`: The code for the HTTP server. Targets Erlang. Run via
-            `gleam run -m subway_gleam/server`. The client must be built first.
+            `just run` (which will build the client first) or `just server run`
+            (which won't).
 - `shared`: Shared code between the server and client. It contains all of the
             lustre view code—ie `fn view()` and `type Model`. This allows for
             server-side rendering.
 - `client`: Contains code that runs exclusively in the browser. It contains all
             the interactive bits of lustre code—ie `fn init()`, `fn update()`,
-            and `type Msg`. Build with
-            `gleam run -m lustre/dev build subway_gleam/client/[route]`.
+            and `type Msg`. Build with `just build-pages` or
+            `just build-page <page-name>`.
 -   `gtfs`: GTFS parsing code for both static and realtime.
 
 ## Development
