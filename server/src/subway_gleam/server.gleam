@@ -136,15 +136,9 @@ pub fn server() -> ewe.Builder {
     ]),
   )
 
-  let listener_name = process.new_name("sbwy_listener")
-  let connection_factory_name = process.new_name("sbwy_connection_factory")
   let handler = ewe_handler(_, state, wisp_handler)
-
-  ewe.new(listener_name:, connection_factory_name:, handler:)
+  ewe.new(handler:)
   |> ewe.bind(to: host)
-  |> ewe.with_http2(
-    ewe.Http2Options(..ewe.default_http2_options(), websocket: True),
-  )
   |> ewe.listening(on: port)
   |> ewe.on_start(fn(scheme, address) {
     // Mostly copied from ewe, but modified to use our log functions.
@@ -154,7 +148,6 @@ pub fn server() -> ewe.Builder {
           ewe.IpV6(..) -> "[" <> ewe.ip_address_to_string(ip_address) <> "]"
           ewe.IpV4(..) -> ewe.ip_address_to_string(ip_address)
         }
-
         let url =
           http.scheme_to_string(scheme)
           <> "://"
@@ -178,7 +171,7 @@ fn ewe_handler(
   wisp_handler: fn(request.Request(ewe.Connection)) ->
     response.Response(ewe.Body),
 ) -> response.Response(ewe.Body) {
-  use <- log.time("mist_handler")
+  use <- log.time("ewe_handler")
   let state = state.get(state_ref)
   case request.path_segments(req) {
     // TODO: figure out some abstraction for this. also move out of this file

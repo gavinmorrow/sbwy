@@ -21,7 +21,7 @@ gtfs = { path = "../gtfs" }
 
 gleam_stdlib = ">= 1.0.3 and < 2.0.0"
 wisp = ">= 2.0.0 and < 3.0.0"
-ewe = ">= 7.0.0 and < 8.0.0"
+ewe = ">= 8.0.0 and < 9.0.0"
 gleam_erlang = ">= 1.3.0 and < 2.0.0"
 gtfs_rt_nyct = "0.2.0"
 # gtfs_rt_nyct = { path = "../gtfs-rt-nyct-gleam/" }
