@@ -36,7 +36,8 @@ pub fn shows_nearby_stops_test() {
     |> simulate.start(Nil)
 
   // Should have no nearby stops
-  let assert [] = query.find_all(in: simulate.view(app), matching: stops())
+  let assert [] =
+    query.find_all(in: simulate.view(app), matching: stops_nearby_lis())
 
   let app =
     simulate.message(
@@ -51,16 +52,16 @@ pub fn shows_nearby_stops_test() {
     )
 
   // Should have no nearby stops
-  let stops_list = query.find_all(in: simulate.view(app), matching: stops())
-  assert list.length(stops_list) == 18
+  let stops = query.find_all(stops_nearby_lis(), in: simulate.view(app))
+  assert list.length(stops) == 18
 }
 
-fn stops_list() -> Query {
+fn stops_nearby_list() -> Query {
   query.element(query.class("stops-nearby-list"))
 }
 
-fn stops() -> Query {
-  query.child(of: stops_list(), matching: query.tag("li"))
+fn stops_nearby_lis() -> Query {
+  query.child(of: stops_nearby_list(), matching: query.tag("li"))
 }
 
 /// Not actually all stops, but a bunch of stops cenetered around City Hall, and
