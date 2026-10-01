@@ -26,7 +26,25 @@ fn simulate(model: Model) -> simulate.Simulation(Model, Msg) {
   |> simulate.start(Nil)
 }
 
-pub fn arriving_train_signified_test() -> Nil {
+pub fn arriving_now_signified_test() -> Nil {
+  // Arrivals in past shouldn't be present at all, so it starts with True
+  assert test_arrival_li_classes("arriving-now")
+    == [True, True, False, False, False, False]
+}
+
+pub fn arriving_very_soon_signified_test() -> Nil {
+  // Arrivals in past shouldn't be present at all, so it starts with True
+  assert test_arrival_li_classes("arriving-very-soon")
+    == [True, True, True, True, False, False]
+}
+
+pub fn arriving_soon_signified_test() -> Nil {
+  // Arrivals in past shouldn't be present at all, so it starts with True
+  assert test_arrival_li_classes("arriving-soon")
+    == [True, True, True, True, True, False]
+}
+
+fn test_arrival_li_classes(class: String) -> List(Bool) {
   let arrival_times = [
     // Departed
     duration.minutes(-1),
@@ -34,12 +52,14 @@ pub fn arriving_train_signified_test() -> Nil {
     // Arriving now
     duration.seconds(-5),
     duration.seconds(22),
-    // Not arriving now
+    // Arriving very soon
     duration.seconds(31),
     duration.minutes(5),
+    // Arriving soon
+    duration.minutes(10),
+    // Later arrivals
     duration.hours(1),
   ]
-
   let app =
     simulate(Model(
       id: st.StopId("A27"),
@@ -58,12 +78,8 @@ pub fn arriving_train_signified_test() -> Nil {
       is_fav: False,
     ))
 
-  let arrival_lis =
-    query.find_all(arrival_lis(), in: simulate.view(app))
-    |> list.map(query.has(_, query.class("arriving-now")))
-
-  // Arrivals in past shouldn't be present at all, so it starts with True
-  assert arrival_lis == [True, True, False, False, False]
+  query.find_all(arrival_lis(), in: simulate.view(app))
+  |> list.map(query.has(_, query.class(class)))
 }
 
 const unix_epoch: Time = Time(timestamp.unix_epoch, Error(Nil))
