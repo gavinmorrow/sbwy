@@ -1,0 +1,94 @@
+import gleam/int
+import gleam/list
+import gleam/option
+import gleam/time/duration
+import gleam/time/timestamp
+import lustre/dev/query.{type Query}
+import lustre/dev/simulate
+import lustre/effect
+import subway_gleam/gtfs/rt
+import subway_gleam/gtfs/st
+import subway_gleam/shared/component/route_bullet
+import subway_gleam/shared/util/live_status
+import subway_gleam/shared/util/time.{type Time, Time}
+
+import subway_gleam/client/stop.{type Msg, ToggleFavBtnPressed, update} as _
+import subway_gleam/shared/route/stop.{
+  type Arrival, type Model, Arrival, Model, view,
+} as _
+
+fn simulate(model: Model) -> simulate.Simulation(Model, Msg) {
+  simulate.application(
+    init: fn(_) { #(model, effect.none()) },
+    update:,
+    view: view(_, ToggleFavBtnPressed),
+  )
+  |> simulate.start(Nil)
+}
+
+pub fn arriving_train_signified_test() -> Nil {
+  let arrival_times = [
+    // Departed
+    duration.minutes(-1),
+    duration.seconds(-31),
+    // Arriving now
+    duration.seconds(-5),
+    duration.seconds(22),
+    // Not arriving now
+    duration.seconds(31),
+    duration.minutes(5),
+    duration.hours(1),
+  ]
+
+  let app =
+    simulate(Model(
+      id: st.StopId("A27"),
+      name: "42 St-Port Authority Bus Terminal",
+      last_updated: unix_epoch,
+      transfers: [],
+      alerted_routes: [],
+      alert_summary: "",
+      uptown: list.map(arrival_times, arrival(in: _)),
+      downtown: [],
+      north_direction_label: "Uptown",
+      south_direction_label: "Downtown",
+      highlighted_train: option.None,
+      event_source: live_status.Unavailable,
+      cur_time: unix_epoch,
+      is_fav: False,
+    ))
+
+  let arrival_lis =
+    query.find_all(arrival_lis(), in: simulate.view(app))
+    |> list.map(query.has(_, query.class("arriving-now")))
+
+  // Arrivals in past shouldn't be present at all, so it starts with True
+  assert arrival_lis == [True, True, False, False, False]
+}
+
+const unix_epoch: Time = Time(timestamp.unix_epoch, Error(Nil))
+
+const route_bullet_a = route_bullet.RouteBullet(
+  text: "A",
+  shape: st.Circle,
+  color: "#0062CF",
+  text_color: "white",
+)
+
+fn arrival(in time: duration.Duration) -> Arrival {
+  Arrival(
+    train_id: rt.TripId(int.random(1000) |> int.to_string),
+    train_url: "",
+    route: route_bullet_a,
+    headsign: Error(Nil),
+    time: timestamp.add(unix_epoch.timestamp, time),
+  )
+}
+
+fn arrival_lists() -> Query {
+  query.element(query.class("arrival-list"))
+}
+
+fn arrival_lis() -> Query {
+  query.child(of: arrival_lists(), matching: query.tag("li"))
+}

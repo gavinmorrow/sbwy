@@ -42,7 +42,7 @@ fn init(flags: Model) -> #(Model, Effect(Msg)) {
   #(flags, effect.batch([update_cur_time, event_source]))
 }
 
-fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     ToggleFavBtnPressed -> #(
       Model(..model, is_fav: !model.is_fav),
