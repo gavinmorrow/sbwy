@@ -6,6 +6,8 @@ build: (server "build") build-pages
 
 run: build-pages (server "run")
 
+test: (client "test")
+
 [working-directory: 'server']
 server cmd="check":
     gleam {{cmd}} {{ if cmd == "run" { "-m subway_gleam/server" } else { "" } }}

@@ -37,6 +37,8 @@ saved, so development can continue locally without re-fetching and parsing each
 time. The folder `./gtfs/priv/` may need to be created. Disable fetch and save
 to disk afterwards, and only enable when needed.
 
+To test the project, run `just test`.
+
 ### Env vars
 
 | name              | description                                       |
