@@ -13,47 +13,68 @@ import subway_gleam/gtfs/st/route.{
 import subway_gleam/gtfs/st_extra.{Manhattan}
 import subway_gleam/shared/ffi/geolocation
 
-import subway_gleam/client/stops.{UpdatePosition, update} as _
-import subway_gleam/shared/route/stops.{Model, view} as _
+import subway_gleam/client/stops.{type Msg, UpdatePosition, update} as _
+import subway_gleam/shared/route/stops.{type Model, Model, StopLi, view} as _
+
+fn simulate(model: Model) -> simulate.Simulation(Model, Msg) {
+  simulate.application(init: fn(_) { #(model, effect.none()) }, update:, view:)
+  |> simulate.start(Nil)
+}
 
 pub fn shows_nearby_stops_test() {
   let app =
-    simulate.application(
-      init: fn(_) {
-        #(
-          Model(
-            all_stops: all_stops(),
-            stop_routes: dict.new(),
-            cur_position: option.None,
-            fav_stops: [],
-          ),
-          effect.none(),
-        )
-      },
-      update:,
-      view:,
+    simulate(
+      Model(
+        all_stops: all_stops(),
+        stop_routes: dict.new(),
+        cur_position: option.None,
+        fav_stops: [],
+      ),
     )
-    |> simulate.start(Nil)
 
   // Should have no nearby stops
-  let assert [] =
-    query.find_all(in: simulate.view(app), matching: stops_nearby_lis())
+  let assert [] = query.find_all(stops_nearby_lis(), in: simulate.view(app))
 
-  let app =
-    simulate.message(
-      app,
-      UpdatePosition(geolocation.Position(
-        latitude: 40.7127667,
-        longitude: -74.0060544,
-        accuracy: 10.0,
-        // Okay to use epoch because it's just a test
-        timestamp: timestamp.unix_epoch,
-      )),
-    )
+  let app = simulate.message(app, UpdatePosition(city_hall_position))
 
   // Should have no nearby stops
   let stops = query.find_all(stops_nearby_lis(), in: simulate.view(app))
   assert list.length(stops) == 18
+}
+
+pub fn always_shows_favorites_test() -> Nil {
+  let fav_stops = [
+    // Should be within distance
+    StopLi(id: StopId("R24"), name: "City Hall"),
+    // Should be outside of distance
+    StopLi(id: StopId("Q05"), name: "96 St"),
+  ]
+
+  let app =
+    simulate(Model(
+      all_stops: all_stops(),
+      stop_routes: dict.new(),
+      cur_position: option.None,
+      fav_stops:,
+    ))
+
+  // All favorites should be shown
+  let shown_favs = query.find_all(fav_stops_lis(), in: simulate.view(app))
+  assert list.length(shown_favs) == list.length(fav_stops)
+
+  let app = simulate.message(app, UpdatePosition(city_hall_position))
+
+  // All favorites should still be shown
+  let shown_favs = query.find_all(fav_stops_lis(), in: simulate.view(app))
+  assert list.length(shown_favs) == list.length(fav_stops)
+}
+
+fn fav_stops_list() -> Query {
+  query.element(query.class("favorite-stops-list"))
+}
+
+fn fav_stops_lis() -> Query {
+  query.child(of: fav_stops_list(), matching: query.tag("li"))
 }
 
 fn stops_nearby_list() -> Query {
@@ -63,6 +84,14 @@ fn stops_nearby_list() -> Query {
 fn stops_nearby_lis() -> Query {
   query.child(of: stops_nearby_list(), matching: query.tag("li"))
 }
+
+const city_hall_position: geolocation.Position = geolocation.Position(
+  latitude: 40.7127667,
+  longitude: -74.0060544,
+  accuracy: 10.0,
+  // Okay to use epoch because it's just a test
+  timestamp: timestamp.unix_epoch,
+)
 
 /// Not actually all stops, but a bunch of stops cenetered around City Hall, and
 /// then a couple extra ones that shouldn't be within range.
