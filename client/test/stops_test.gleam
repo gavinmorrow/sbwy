@@ -21,7 +21,7 @@ fn simulate(model: Model) -> simulate.Simulation(Model, Msg) {
   |> simulate.start(Nil)
 }
 
-pub fn shows_nearby_stops_test() {
+pub fn shows_nearby_stops_test() -> Nil {
   let app =
     simulate(
       Model(
@@ -95,7 +95,7 @@ const city_hall_position: geolocation.Position = geolocation.Position(
 
 /// Not actually all stops, but a bunch of stops cenetered around City Hall, and
 /// then a couple extra ones that shouldn't be within range.
-fn all_stops() {
+fn all_stops() -> List(st.Stop) {
   [
     // Should be within distance
     Stop(
