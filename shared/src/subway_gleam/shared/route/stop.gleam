@@ -111,7 +111,10 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
       html.br([]),
       live_status,
     ]),
-    html.aside([], [html.text("Transfer to:"), ..transfers]),
+    html.aside([attribute.id("transfers")], [
+      html.text("Transfer to:"),
+      ..transfers
+    ]),
     html.aside([], [
       html.a([attribute.href("./alerts/")], [
         alerted_routes,
