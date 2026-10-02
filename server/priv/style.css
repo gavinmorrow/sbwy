@@ -298,8 +298,12 @@ body {
   &:is(a) {
     &:hover,
     &:focus-visible {
-      background-color: var(--color-bg-btn-highlight);
+      background-color: var(--color-bg-row-highlight);
     }
+  }
+
+  &.highlight {
+    background-color: var(--color-bg-btn-highlight);
   }
 }
 

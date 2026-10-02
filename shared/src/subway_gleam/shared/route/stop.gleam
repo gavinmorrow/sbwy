@@ -48,7 +48,7 @@ pub type Model {
 // TODO: should the Msg type be moved in here?
 pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
   let Model(
-    id: _,
+    id:,
     name:,
     last_updated:,
     transfers:,
@@ -70,10 +70,15 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
   let transfers =
     list.map(transfers, fn(transfer) {
       let routes = list.map(transfer.routes, route_bullet.route_bullet)
+      let highlighted = transfer.destination == id
       let st.StopId(id) = transfer.destination
 
       html.a(
-        [attribute.class("bullet-group"), attribute.href("/stop/" <> id <> "/")],
+        [
+          attribute.class("bullet-group"),
+          attribute.classes([#("highlight", highlighted)]),
+          attribute.href("/stop/" <> id <> "/"),
+        ],
         routes,
       )
     })
