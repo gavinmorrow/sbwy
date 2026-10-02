@@ -6,7 +6,6 @@ import gleam/time/timestamp
 import lustre/dev/query.{type Query}
 import lustre/dev/simulate
 import lustre/effect
-import lustre/element
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
 import subway_gleam/shared/component/route_bullet
