@@ -17,38 +17,33 @@ import subway_gleam/shared/route/stop.{
   type Arrival, type Model, Arrival, Model, view,
 } as _
 
-fn simulate(model: Model) -> simulate.Simulation(Model, Msg) {
-  simulate.application(
-    init: fn(_) { #(model, effect.none()) },
-    update:,
-    view: view(_, ToggleFavBtnPressed),
-  )
-  |> simulate.start(Nil)
+fn arrival_lis_class_test(class: String) -> List(Bool) {
+  let app = simulate(model_with_arrivals(arrival_times(), []))
+  simulate.view(app)
+  |> query.find_all(arrival_lis(), in: _)
+  |> list.map(query.has(_, query.class(class)))
 }
 
 pub fn arriving_now_signified_test() -> Nil {
-  // Arrivals in past shouldn't be present at all, so it starts with True
-  assert test_arrival_lis()
-    |> list.map(query.has(_, query.class("arriving-now")))
+  assert arrival_lis_class_test("arriving-now")
+    // Arrivals in past shouldn't be present at all, so it starts with True
     == [True, True, False, False, False, False]
 }
 
 pub fn arriving_very_soon_signified_test() -> Nil {
-  // Arrivals in past shouldn't be present at all, so it starts with True
-  assert test_arrival_lis()
-    |> list.map(query.has(_, query.class("arriving-very-soon")))
+  assert arrival_lis_class_test("arriving-very-soon")
+    // Arrivals in past shouldn't be present at all, so it starts with True
     == [True, True, True, True, False, False]
 }
 
 pub fn arriving_soon_signified_test() -> Nil {
-  // Arrivals in past shouldn't be present at all, so it starts with True
-  assert test_arrival_lis()
-    |> list.map(query.has(_, query.class("arriving-soon")))
+  assert arrival_lis_class_test("arriving-soon")
+    // Arrivals in past shouldn't be present at all, so it starts with True
     == [True, True, True, True, True, False]
 }
 
-fn test_arrival_lis() {
-  let arrival_times = [
+fn arrival_times() -> List(duration.Duration) {
+  [
     // Departed
     duration.minutes(-1),
     duration.seconds(-31),
@@ -63,25 +58,37 @@ fn test_arrival_lis() {
     // Later arrivals
     duration.hours(1),
   ]
-  let app =
-    simulate(Model(
-      id: st.StopId("A27"),
-      name: "42 St-Port Authority Bus Terminal",
-      last_updated: unix_epoch,
-      transfers: [],
-      alerted_routes: [],
-      alert_summary: "",
-      uptown: list.map(arrival_times, arrival(in: _)),
-      downtown: [],
-      north_direction_label: "Uptown",
-      south_direction_label: "Downtown",
-      highlighted_train: option.None,
-      event_source: live_status.Unavailable,
-      cur_time: unix_epoch,
-      is_fav: False,
-    ))
+}
 
-  query.find_all(arrival_lis(), in: simulate.view(app))
+fn simulate(model: Model) -> simulate.Simulation(Model, Msg) {
+  simulate.application(
+    init: fn(_) { #(model, effect.none()) },
+    update:,
+    view: view(_, ToggleFavBtnPressed),
+  )
+  |> simulate.start(Nil)
+}
+
+fn model_with_arrivals(
+  uptown: List(duration.Duration),
+  downtown: List(duration.Duration),
+) -> Model {
+  Model(
+    id: st.StopId("A27"),
+    name: "42 St-Port Authority Bus Terminal",
+    last_updated: unix_epoch,
+    transfers: [],
+    alerted_routes: [],
+    alert_summary: "",
+    uptown: list.map(uptown, arrival(in: _)),
+    downtown: list.map(downtown, arrival(in: _)),
+    north_direction_label: "Uptown",
+    south_direction_label: "Downtown",
+    highlighted_train: option.None,
+    event_source: live_status.Unavailable,
+    cur_time: unix_epoch,
+    is_fav: False,
+  )
 }
 
 const unix_epoch: Time = Time(timestamp.unix_epoch, Error(Nil))
