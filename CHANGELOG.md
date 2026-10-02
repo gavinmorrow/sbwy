@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/).
 
 ## [Unreleased]
 
+## 2026-10-02
+
+### Changed
+
+- The stop current being displayed is highlighted in the transfers list.
+
 ## 2026-09-13
 
 ### Changed
