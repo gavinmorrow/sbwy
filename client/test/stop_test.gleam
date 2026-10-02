@@ -6,6 +6,7 @@ import gleam/time/timestamp
 import lustre/dev/query.{type Query}
 import lustre/dev/simulate
 import lustre/effect
+import lustre/element
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
 import subway_gleam/shared/component/route_bullet
@@ -17,8 +18,45 @@ import subway_gleam/shared/route/stop.{
   type Arrival, type Model, Arrival, Model, view,
 } as _
 
+pub fn highlighted_train_is_highlighted_test() -> Nil {
+  let highlighted =
+    Arrival(
+      train_id: rt.TripId(int.random(1000) |> int.to_string),
+      train_url: "",
+      route: route_bullet_a,
+      headsign: Error(Nil),
+      time: timestamp.add(unix_epoch.timestamp, duration.minutes(2)),
+    )
+
+  let app =
+    simulate(
+      Model(
+        ..default_model,
+        uptown: [
+          arrival(in: duration.seconds(5)),
+          highlighted,
+          arrival(in: duration.minutes(10)),
+        ],
+        downtown: [
+          arrival(in: duration.minutes(2)),
+          arrival(in: duration.hours(1)),
+        ],
+        highlighted_train: option.Some(highlighted.train_id),
+      ),
+    )
+
+  let lists = query.find_all(arrival_lists(), in: simulate.view(app))
+  let highlights =
+    list.map(lists, fn(list) {
+      query.find_all(arrival_lis(), in: list)
+      |> list.map(query.has(_, query.class("highlight")))
+    })
+
+  assert highlights == [[False, True, False], [False, False]]
+}
+
 fn arrival_lis_class_test(class: String) -> List(Bool) {
-  let app = simulate(model_with_arrivals(arrival_times(), []))
+  let app = simulate(model_with_arrival_times(arrival_times(), []))
   simulate.view(app)
   |> query.find_all(arrival_lis(), in: _)
   |> list.map(query.has(_, query.class(class)))
@@ -69,27 +107,33 @@ fn simulate(model: Model) -> simulate.Simulation(Model, Msg) {
   |> simulate.start(Nil)
 }
 
-fn model_with_arrivals(
+fn model_with_arrival_times(
   uptown: List(duration.Duration),
   downtown: List(duration.Duration),
 ) -> Model {
   Model(
-    id: st.StopId("A27"),
-    name: "42 St-Port Authority Bus Terminal",
-    last_updated: unix_epoch,
-    transfers: [],
-    alerted_routes: [],
-    alert_summary: "",
+    ..default_model,
     uptown: list.map(uptown, arrival(in: _)),
     downtown: list.map(downtown, arrival(in: _)),
-    north_direction_label: "Uptown",
-    south_direction_label: "Downtown",
-    highlighted_train: option.None,
-    event_source: live_status.Unavailable,
-    cur_time: unix_epoch,
-    is_fav: False,
   )
 }
+
+const default_model = Model(
+  id: st.StopId("A27"),
+  name: "42 St-Port Authority Bus Terminal",
+  last_updated: unix_epoch,
+  transfers: [],
+  alerted_routes: [],
+  alert_summary: "",
+  uptown: [],
+  downtown: [],
+  north_direction_label: "Uptown",
+  south_direction_label: "Downtown",
+  highlighted_train: option.None,
+  event_source: live_status.Unavailable,
+  cur_time: unix_epoch,
+  is_fav: False,
+)
 
 const unix_epoch: Time = Time(timestamp.unix_epoch, Error(Nil))
 

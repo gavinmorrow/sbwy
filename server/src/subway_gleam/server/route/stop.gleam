@@ -58,6 +58,7 @@ pub fn stop(
   }
 }
 
+// TODO: don't take the entire state... that's so hard to test...
 pub fn model(
   state: state.State,
   stop_id: String,
