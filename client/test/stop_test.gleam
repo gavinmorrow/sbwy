@@ -28,23 +28,26 @@ fn simulate(model: Model) -> simulate.Simulation(Model, Msg) {
 
 pub fn arriving_now_signified_test() -> Nil {
   // Arrivals in past shouldn't be present at all, so it starts with True
-  assert test_arrival_li_classes("arriving-now")
+  assert test_arrival_lis()
+    |> list.map(query.has(_, query.class("arriving-now")))
     == [True, True, False, False, False, False]
 }
 
 pub fn arriving_very_soon_signified_test() -> Nil {
   // Arrivals in past shouldn't be present at all, so it starts with True
-  assert test_arrival_li_classes("arriving-very-soon")
+  assert test_arrival_lis()
+    |> list.map(query.has(_, query.class("arriving-very-soon")))
     == [True, True, True, True, False, False]
 }
 
 pub fn arriving_soon_signified_test() -> Nil {
   // Arrivals in past shouldn't be present at all, so it starts with True
-  assert test_arrival_li_classes("arriving-soon")
+  assert test_arrival_lis()
+    |> list.map(query.has(_, query.class("arriving-soon")))
     == [True, True, True, True, True, False]
 }
 
-fn test_arrival_li_classes(class: String) -> List(Bool) {
+fn test_arrival_lis() {
   let arrival_times = [
     // Departed
     duration.minutes(-1),
@@ -79,7 +82,6 @@ fn test_arrival_li_classes(class: String) -> List(Bool) {
     ))
 
   query.find_all(arrival_lis(), in: simulate.view(app))
-  |> list.map(query.has(_, query.class(class)))
 }
 
 const unix_epoch: Time = Time(timestamp.unix_epoch, Error(Nil))
