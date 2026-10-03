@@ -58,7 +58,6 @@ pub fn stop(
   }
 }
 
-// TODO: don't take the entire state... that's so hard to test...
 pub fn model(
   state: state.State,
   stop_id: String,
@@ -86,12 +85,12 @@ pub fn model(
     |> result.replace_error(UnknownStop(stop_id)),
   )
 
-  let transfers = transfers(state, stop)
+  let transfers = transfers(state.schedule, stop)
 
   let data = state.fetch_gtfs(state)
 
-  let #(alerted_routes, alert_summary) = alerts(data, stop_id, state)
-  let #(uptown, downtown) = arrivals(data, stop_id, state)
+  let #(alerted_routes, alert_summary) = alerts(data, stop_id, state.schedule)
+  let #(uptown, downtown) = arrivals(data, stop_id, state.schedule)
 
   let cur_time = time_zone.now(state.tz_db)
   let last_updated =
@@ -121,16 +120,16 @@ pub fn model(
   ))
 }
 
-fn transfers(state: state.State, stop: st.Stop) -> List(stop.Transfer) {
-  state.schedule.transfers
+fn transfers(schedule: st.Schedule, stop: st.Stop) -> List(stop.Transfer) {
+  schedule.transfers
   |> dict.get(stop.id)
   |> result.unwrap(or: set.new())
   |> set.map(fn(transfer) {
     let routes =
-      state.schedule
+      schedule
       |> st.daytime_routes(for: transfer.destination)
       |> set.map(fn(route_id) {
-        let assert Ok(route) = state.schedule.routes |> dict.get(route_id)
+        let assert Ok(route) = schedule.routes |> dict.get(route_id)
         route
       })
       |> set.to_list
@@ -146,14 +145,14 @@ fn transfers(state: state.State, stop: st.Stop) -> List(stop.Transfer) {
 fn alerts(
   data: gtfs_store.Data,
   stop_id: st.StopId,
-  state: state.State,
+  schedule: st.Schedule,
 ) -> #(List(route_bullet.RouteBullet), String) {
   // Add in alerts from arrivals.
   // Needed b/c if a train is rerouted then alerts from that train should be
   // shown at this stop.
   let routes =
     set.union(
-      of: st.daytime_routes(in: state.schedule, for: stop_id),
+      of: st.daytime_routes(in: schedule, for: stop_id),
       and: gtfs_store.arrivals(data, for: stop_id) |> rt.routes_arriving,
     )
 
@@ -165,7 +164,7 @@ fn alerts(
     list.fold(over: alerts, from: set.new(), with: fn(acc, alert) {
       set.union(of: acc, and: rt.routes_in_alert(alert))
     })
-    |> set.map(st.route_data(in: state.schedule, for: _))
+    |> set.map(st.route_data(in: schedule, for: _))
     |> set.to_list
     |> list.sort(by: fn(a, b) { int.compare(a.sort_order, b.sort_order) })
     |> list.map(route_bullet.from_route_data)
@@ -186,7 +185,7 @@ fn alerts(
 fn arrivals(
   data: gtfs_store.Data,
   stop_id: st.StopId,
-  state: state.State,
+  schedule: st.Schedule,
 ) -> #(List(stop.Arrival), List(stop.Arrival)) {
   gtfs_store.arrivals(data, for: stop_id)
   |> result.unwrap(or: [])
@@ -195,8 +194,7 @@ fn arrivals(
   })
   |> list.fold(from: #([], []), with: fn(acc, update) {
     let #(uptown_acc, downtown_acc) = acc
-    let li =
-      arrival_li(update, state.schedule, gtfs_store.final_stop(data, for: _))
+    let li = arrival_li(update, schedule, gtfs_store.final_stop(data, for: _))
     case update.1.direction {
       st.North -> #([li, ..uptown_acc], downtown_acc)
       st.South -> #(uptown_acc, [li, ..downtown_acc])
