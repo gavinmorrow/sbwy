@@ -12,12 +12,17 @@ dependencies:
   - just
 
 cache:
-  - key: deps
+  - key: client-deps
     hash:
       - client/manifest.toml
     paths:
       - client/build/packages
+  - key: server-deps
+    hash:
+      - server/manifest.toml
+    paths:
+      - server/build/packages
 
 steps:
   - name: Test
-    command: "just client test"
+    command: "just test"
