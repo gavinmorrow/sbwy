@@ -1,0 +1,26 @@
+---
+version: 2.0.2
+title: Stop <li>s all link to correct stop page
+file: ./test/stops_test.gleam
+test_name: stops_link_to_stop_page_test
+---
+<li data-lustre-key="R24"><a href="/stop/R24/">City Hall<div></div></a></li>
+<li data-lustre-key="Q05"><a href="/stop/Q05/">96 St<div></div></a></li>
+<li data-lustre-key="R24"><a href="/stop/R24/">City Hall<div></div></a></li>
+<li data-lustre-key="640"><a href="/stop/640/">Brooklyn Bridge-City Hall<div></div></a></li>
+<li data-lustre-key="M21"><a href="/stop/M21/">Chambers St<div></div></a></li>
+<li data-lustre-key="228"><a href="/stop/228/">Park Place<div></div></a></li>
+<li data-lustre-key="A36"><a href="/stop/A36/">Chambers St<div></div></a></li>
+<li data-lustre-key="M22"><a href="/stop/M22/">Fulton St<div></div></a></li>
+<li data-lustre-key="E01"><a href="/stop/E01/">World Trade Center<div></div></a></li>
+<li data-lustre-key="A38"><a href="/stop/A38/">Fulton St<div></div></a></li>
+<li data-lustre-key="229"><a href="/stop/229/">Fulton St<div></div></a></li>
+<li data-lustre-key="418"><a href="/stop/418/">Fulton St<div></div></a></li>
+<li data-lustre-key="137"><a href="/stop/137/">Chambers St<div></div></a></li>
+<li data-lustre-key="R25"><a href="/stop/R25/">Cortlandt St<div></div></a></li>
+<li data-lustre-key="138"><a href="/stop/138/">WTC Cortlandt<div></div></a></li>
+<li data-lustre-key="230"><a href="/stop/230/">Wall St<div></div></a></li>
+<li data-lustre-key="136"><a href="/stop/136/">Franklin St<div></div></a></li>
+<li data-lustre-key="419"><a href="/stop/419/">Wall St<div></div></a></li>
+<li data-lustre-key="Q01"><a href="/stop/Q01/">Canal St<div></div></a></li>
+<li data-lustre-key="M20"><a href="/stop/M20/">Canal St<div></div></a></li>

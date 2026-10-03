@@ -1,11 +1,14 @@
+import birdie
 import gleam/dict
 import gleam/list
 import gleam/option
 import gleam/set
+import gleam/string
 import gleam/time/timestamp
 import lustre/dev/query.{type Query}
 import lustre/dev/simulate
 import lustre/effect
+import lustre/element
 import subway_gleam/gtfs/st.{Stop, StopId}
 import subway_gleam/gtfs/st/route.{
   A, C, E, J, N, N1, N2, N3, N4, N5, N6, Q, R, W, Z,
@@ -19,6 +22,24 @@ import subway_gleam/shared/route/stops.{type Model, Model, StopLi, view} as _
 fn simulate(model: Model) -> simulate.Simulation(Model, Msg) {
   simulate.application(init: fn(_) { #(model, effect.none()) }, update:, view:)
   |> simulate.start(Nil)
+}
+
+pub fn stops_link_to_stop_page_test() -> Nil {
+  let html =
+    view(Model(
+      all_stops: all_stops(),
+      stop_routes: dict.new(),
+      cur_position: option.Some(city_hall_position),
+      fav_stops:,
+    ))
+  let stop_lis =
+    query.find_all(fav_stops_lis(), in: html)
+    |> list.append(query.find_all(stops_nearby_lis(), in: html))
+
+  birdie.snap(
+    title: "Stop <li>s all link to correct stop page",
+    content: stop_lis |> list.map(element.to_string) |> string.join("\n"),
+  )
 }
 
 pub fn shows_nearby_stops_test() -> Nil {
@@ -43,13 +64,6 @@ pub fn shows_nearby_stops_test() -> Nil {
 }
 
 pub fn always_shows_favorites_test() -> Nil {
-  let fav_stops = [
-    // Should be within distance
-    StopLi(id: StopId("R24"), name: "City Hall"),
-    // Should be outside of distance
-    StopLi(id: StopId("Q05"), name: "96 St"),
-  ]
-
   let app =
     simulate(Model(
       all_stops: all_stops(),
@@ -92,6 +106,13 @@ const city_hall_position: geolocation.Position = geolocation.Position(
   // Okay to use epoch because it's just a test
   timestamp: timestamp.unix_epoch,
 )
+
+const fav_stops = [
+  // Should be within distance
+  StopLi(id: StopId("R24"), name: "City Hall"),
+  // Should be outside of distance
+  StopLi(id: StopId("Q05"), name: "96 St"),
+]
 
 /// Not actually all stops, but a bunch of stops cenetered around City Hall, and
 /// then a couple extra ones that shouldn't be within range.
