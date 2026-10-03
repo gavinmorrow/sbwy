@@ -5,7 +5,7 @@ import gleam/option
 import gleam/order
 import gleam/pair
 import gleam/result
-import gleam/set
+import gleam/set.{type Set}
 import gleam/string
 import gleam/time/timestamp
 import gleam/uri
@@ -86,79 +86,12 @@ pub fn model(
     |> result.replace_error(UnknownStop(stop_id)),
   )
 
-  let routes = st.daytime_routes(in: state.schedule, for: stop_id)
-  let transfers =
-    state.schedule.transfers
-    |> dict.get(stop.id)
-    |> result.unwrap(or: set.new())
-    |> set.map(fn(transfer) {
-      let routes =
-        state.schedule
-        |> st.daytime_routes(for: transfer.destination)
-        |> set.map(fn(route_id) {
-          let assert Ok(route) = state.schedule.routes |> dict.get(route_id)
-          route
-        })
-        |> set.to_list
-        |> list.sort(st.route_compare)
-        |> list.map(route_bullet.from_route_data)
-
-      stop.Transfer(destination: transfer.destination, routes:)
-    })
-    // TODO: also need to sort each group in sort order
-    |> set.to_list
+  let transfers = transfers(state, stop)
 
   let data = state.fetch_gtfs(state)
 
-  // Add in alerts from arrivals.
-  // Needed b/c if a train is rerouted then alerts from that train should be
-  // shown at this stop.
-  let routes =
-    set.union(
-      of: routes,
-      and: gtfs_store.arrivals(data, for: stop_id) |> rt.routes_arriving,
-    )
-
-  let alerts =
-    gtfs_store.alerts(data)
-    |> result.map(filter_alerts(_, routes, stop_id))
-    |> result.unwrap(or: [])
-  let alerted_routes =
-    list.fold(over: alerts, from: set.new(), with: fn(acc, alert) {
-      set.union(of: acc, and: rt.routes_in_alert(alert))
-    })
-    |> set.map(st.route_data(in: state.schedule, for: _))
-    |> set.to_list
-    |> list.sort(by: fn(a, b) { int.compare(a.sort_order, b.sort_order) })
-    |> list.map(route_bullet.from_route_data)
-  let alert_summary =
-    alerts
-    |> list.map(fn(alert) { option.unwrap(alert.alert_type, or: "Alert") })
-    |> list.unique
-    |> string.join(with: ", ")
-  let alert_summary = case list.length(alerts) {
-    0 -> "0 Alerts"
-    1 -> "1 Alert: " <> alert_summary
-    num -> int.to_string(num) <> " Alerts: " <> alert_summary
-  }
-
-  let #(uptown, downtown) =
-    gtfs_store.arrivals(data, for: stop_id)
-    |> result.unwrap(or: [])
-    |> list.sort(by: fn(a, b) {
-      timestamp.compare(a.1.time, b.1.time) |> order.negate
-    })
-    |> list.fold(from: #([], []), with: fn(acc, update) {
-      let #(uptown_acc, downtown_acc) = acc
-      let li =
-        arrival_li(update, state.schedule, gtfs_store.final_stop(data, for: _))
-      case update.1.direction {
-        st.North -> #([li, ..uptown_acc], downtown_acc)
-        st.South -> #(uptown_acc, [li, ..downtown_acc])
-      }
-    })
-  // let uptown = uptown |> list.take(from: _, up_to: 10)
-  // let downtown = downtown |> list.take(from: _, up_to: 10)
+  let #(alerted_routes, alert_summary) = alerts(data, stop_id, state)
+  let #(uptown, downtown) = arrivals(data, stop_id, state)
 
   let cur_time = time_zone.now(state.tz_db)
   let last_updated =
@@ -188,11 +121,94 @@ pub fn model(
   ))
 }
 
+fn transfers(state: state.State, stop: st.Stop) -> List(stop.Transfer) {
+  state.schedule.transfers
+  |> dict.get(stop.id)
+  |> result.unwrap(or: set.new())
+  |> set.map(fn(transfer) {
+    let routes =
+      state.schedule
+      |> st.daytime_routes(for: transfer.destination)
+      |> set.map(fn(route_id) {
+        let assert Ok(route) = state.schedule.routes |> dict.get(route_id)
+        route
+      })
+      |> set.to_list
+      |> list.sort(st.route_compare)
+      |> list.map(route_bullet.from_route_data)
+
+    stop.Transfer(destination: transfer.destination, routes:)
+  })
+  // TODO: also need to sort each group in sort order
+  |> set.to_list
+}
+
+fn alerts(
+  data: gtfs_store.Data,
+  stop_id: st.StopId,
+  state: state.State,
+) -> #(List(route_bullet.RouteBullet), String) {
+  // Add in alerts from arrivals.
+  // Needed b/c if a train is rerouted then alerts from that train should be
+  // shown at this stop.
+  let routes =
+    set.union(
+      of: st.daytime_routes(in: state.schedule, for: stop_id),
+      and: gtfs_store.arrivals(data, for: stop_id) |> rt.routes_arriving,
+    )
+
+  let alerts =
+    gtfs_store.alerts(data)
+    |> result.map(filter_alerts(_, routes, stop_id))
+    |> result.unwrap(or: [])
+  let alerted_routes =
+    list.fold(over: alerts, from: set.new(), with: fn(acc, alert) {
+      set.union(of: acc, and: rt.routes_in_alert(alert))
+    })
+    |> set.map(st.route_data(in: state.schedule, for: _))
+    |> set.to_list
+    |> list.sort(by: fn(a, b) { int.compare(a.sort_order, b.sort_order) })
+    |> list.map(route_bullet.from_route_data)
+  let alert_summary =
+    alerts
+    |> list.map(fn(alert) { option.unwrap(alert.alert_type, or: "Alert") })
+    |> list.unique
+    |> string.join(with: ", ")
+  let alert_summary = case list.length(alerts) {
+    0 -> "0 Alerts"
+    1 -> "1 Alert: " <> alert_summary
+    num -> int.to_string(num) <> " Alerts: " <> alert_summary
+  }
+
+  #(alerted_routes, alert_summary)
+}
+
+fn arrivals(
+  data: gtfs_store.Data,
+  stop_id: st.StopId,
+  state: state.State,
+) -> #(List(stop.Arrival), List(stop.Arrival)) {
+  gtfs_store.arrivals(data, for: stop_id)
+  |> result.unwrap(or: [])
+  |> list.sort(by: fn(a, b) {
+    timestamp.compare(a.1.time, b.1.time) |> order.negate
+  })
+  |> list.fold(from: #([], []), with: fn(acc, update) {
+    let #(uptown_acc, downtown_acc) = acc
+    let li =
+      arrival_li(update, state.schedule, gtfs_store.final_stop(data, for: _))
+    case update.1.direction {
+      st.North -> #([li, ..uptown_acc], downtown_acc)
+      st.South -> #(uptown_acc, [li, ..downtown_acc])
+    }
+  })
+}
+
 // TODO: do this processing for every alert as part of processing rt data.
 //       it adds slightly noticable lag to each request
 pub fn filter_alerts(
   alerts: List(rt.Alert),
-  routes: set.Set(Route),
+  routes: Set(Route),
   stop_id: st.StopId,
 ) -> List(rt.Alert) {
   let current_time = util.current_time()
