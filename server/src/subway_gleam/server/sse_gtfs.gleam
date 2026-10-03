@@ -52,7 +52,7 @@ pub fn sse_gtfs(
         }
       }
     },
-    on_close: fn(_conn, self) {
+    on_close: fn(self) {
       log.debug(
         "Connection closed; unsubscribing from gtfs store.",
         with: context,
