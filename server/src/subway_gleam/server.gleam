@@ -1,3 +1,4 @@
+import clacks_overhead
 import eflame
 import ewe
 import gleam/erlang/atom.{type Atom}
@@ -172,6 +173,7 @@ fn ewe_handler(
     response.Response(ewe.Body),
 ) -> response.Response(ewe.Body) {
   use <- log.time("ewe_handler")
+  use <- clacks_overhead()
   let state = state.get(state_ref)
   case request.path_segments(req) {
     // TODO: figure out some abstraction for this. also move out of this file
@@ -248,6 +250,12 @@ fn handler(state: state.Ref, req: wisp.Request) -> wisp.Response {
     ["line", route_id] -> route.line(req, state, route_id)
     _ -> route.not_found(req)
   }
+}
+
+fn clacks_overhead(
+  handler: fn() -> response.Response(res),
+) -> response.Response(res) {
+  handler() |> clacks_overhead.commemorate_terry
 }
 
 fn configure_logger() -> Nil {

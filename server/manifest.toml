@@ -9,6 +9,7 @@
 packages = [
   { name = "alpacki", version = "3.0.1", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "alpacki", source = "hex", outer_checksum = "5BCB617A9606E56018790D4F24AB1E06B6D05BC17ACD6686B99E8D4D18B1F5FD" },
   { name = "booklet", version = "1.1.0", build_tools = ["gleam"], requirements = [], otp_app = "booklet", source = "hex", outer_checksum = "08E0FDB78DC4D8A5D3C80295B021505C7D2A2E7B6C6D5EAB7286C36F4A53C851" },
+  { name = "clacks_overhead", version = "1.0.0", build_tools = ["gleam"], requirements = ["gleam_http", "gleam_stdlib"], otp_app = "clacks_overhead", source = "hex", outer_checksum = "418E812CF47F2E92073757DFCDE513AEBE316949BE71F608A6162C3B1B4B6D1C" },
   { name = "directories", version = "1.2.0", build_tools = ["gleam"], requirements = ["envoy", "gleam_stdlib", "platform", "simplifile"], otp_app = "directories", source = "hex", outer_checksum = "D13090CFCDF6759B87217E8DDD73A75903A700148A82C1D33799F333E249BF9E" },
   { name = "envoy", version = "1.2.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "envoy", source = "hex", outer_checksum = "9C6FBB6BFA02A52798BEEC5977A738CAD6E4A057F4B67FD0C8061AD2502C191A" },
   { name = "ewe", version = "8.0.0", build_tools = ["gleam"], requirements = ["alpacki", "gleam_erlang", "gleam_http", "gleam_otp", "gleam_stdlib", "logging", "tup", "websocks"], otp_app = "ewe", source = "hex", outer_checksum = "C4A08E94178DECC2B035608E97DFECF0A16255343EEDFE8D2053AD441F4563B0" },
@@ -54,6 +55,7 @@ packages = [
 
 [requirements]
 booklet = { version = ">= 1.1.0 and < 2.0.0" }
+clacks_overhead = { version = ">= 1.0.0 and < 2.0.0" }
 envoy = { version = ">= 1.1.0 and < 2.0.0" }
 ewe = { version = ">= 8.0.0 and < 9.0.0" }
 exception = { version = ">= 2.1.1 and < 3.0.0" }
