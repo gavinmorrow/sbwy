@@ -1,0 +1,12 @@
+---
+version: 2.0.2
+title: Times (absolute and countdown) are in hh:mm+? and <int>m format.
+file: ./test/stop_test.gleam
+test_name: arrivals_are_in_correct_format_test
+---
+<div class="arrival-time"><span class="relative-time">0m</span><span class="time-of-day">19:59+</span></div>
+<div class="arrival-time"><span class="relative-time">0m</span><span class="time-of-day">20:00 </span></div>
+<div class="arrival-time"><span class="relative-time">1m</span><span class="time-of-day">20:00+</span></div>
+<div class="arrival-time"><span class="relative-time">5m</span><span class="time-of-day">20:05 </span></div>
+<div class="arrival-time"><span class="relative-time">10m</span><span class="time-of-day">20:10 </span></div>
+<div class="arrival-time"><span class="relative-time">60m</span><span class="time-of-day">21:00 </span></div>

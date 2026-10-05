@@ -1,11 +1,14 @@
+import birdie
 import gleam/int
 import gleam/list
 import gleam/option
+import gleam/string
 import gleam/time/duration
 import gleam/time/timestamp
 import lustre/dev/query.{type Query}
 import lustre/dev/simulate
 import lustre/effect
+import lustre/element
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
 import subway_gleam/shared/component/route_bullet
@@ -17,12 +20,29 @@ import subway_gleam/shared/route/stop.{
   type Arrival, type Model, Arrival, Model, Transfer, view,
 } as _
 
+pub fn arrivals_are_in_correct_format_test() -> Nil {
+  let html =
+    view(
+      Model(..default_model(), uptown: arrival_times() |> list.map(arrival)),
+      Nil,
+    )
+  let lis =
+    query.find_all(
+      query.descendant(of: arrival_lis(), matching: query.class("arrival-time")),
+      in: html,
+    )
+  birdie.snap(
+    title: "Times (absolute and countdown) are in hh:mm+? and <int>m format.",
+    content: list.map(lis, element.to_string) |> string.join("\n"),
+  )
+}
+
 pub fn transfer_for_current_stop_is_highlighted_test() -> Nil {
   let transfer = Transfer(destination: stop_id_a27, routes: [route_bullet_a])
 
   let app =
     simulate(
-      Model(..default_model, transfers: [
+      Model(..default_model(), transfers: [
         Transfer(destination: st.StopId("0"), routes: []),
         transfer,
         Transfer(destination: st.StopId("1"), routes: []),
@@ -46,13 +66,13 @@ pub fn highlighted_train_is_highlighted_test() -> Nil {
       train_url: "",
       route: route_bullet_a,
       headsign: Error(Nil),
-      time: timestamp.add(unix_epoch.timestamp, duration.minutes(2)),
+      time: timestamp.add(unix_epoch().timestamp, duration.minutes(2)),
     )
 
   let app =
     simulate(
       Model(
-        ..default_model,
+        ..default_model(),
         uptown: [
           arrival(in: duration.seconds(5)),
           highlighted,
@@ -133,7 +153,7 @@ fn model_with_arrival_times(
   downtown: List(duration.Duration),
 ) -> Model {
   Model(
-    ..default_model,
+    ..default_model(),
     uptown: list.map(uptown, arrival(in: _)),
     downtown: list.map(downtown, arrival(in: _)),
   )
@@ -141,24 +161,28 @@ fn model_with_arrival_times(
 
 const stop_id_a27 = st.StopId("A27")
 
-const default_model = Model(
-  id: stop_id_a27,
-  name: "42 St-Port Authority Bus Terminal",
-  last_updated: unix_epoch,
-  transfers: [],
-  alerted_routes: [],
-  alert_summary: "",
-  uptown: [],
-  downtown: [],
-  north_direction_label: "Uptown",
-  south_direction_label: "Downtown",
-  highlighted_train: option.None,
-  event_source: live_status.Unavailable,
-  cur_time: unix_epoch,
-  is_fav: False,
-)
+fn default_model() -> Model {
+  Model(
+    id: stop_id_a27,
+    name: "42 St-Port Authority Bus Terminal",
+    last_updated: unix_epoch(),
+    transfers: [],
+    alerted_routes: [],
+    alert_summary: "",
+    uptown: [],
+    downtown: [],
+    north_direction_label: "Uptown",
+    south_direction_label: "Downtown",
+    highlighted_train: option.None,
+    event_source: live_status.Unavailable,
+    cur_time: unix_epoch(),
+    is_fav: False,
+  )
+}
 
-const unix_epoch: Time = Time(timestamp.unix_epoch, Error(Nil))
+fn unix_epoch() -> Time {
+  Time(timestamp.unix_epoch, Ok(duration.hours(-4)))
+}
 
 const route_bullet_a = route_bullet.RouteBullet(
   text: "A",
@@ -173,7 +197,7 @@ fn arrival(in time: duration.Duration) -> Arrival {
     train_url: "",
     route: route_bullet_a,
     headsign: Error(Nil),
-    time: timestamp.add(unix_epoch.timestamp, time),
+    time: timestamp.add(unix_epoch().timestamp, time),
   )
 }
 
