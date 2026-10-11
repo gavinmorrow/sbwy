@@ -7,6 +7,8 @@ import lustre/effect.{type Effect}
 import lustre_event_source
 import plinth/browser/document
 import plinth/browser/element
+import plinth/browser/location
+import plinth/browser/window
 
 import subway_gleam/client/stops
 import subway_gleam/client/util/set_interval
@@ -37,7 +39,10 @@ pub type Msg {
 
 fn init(flags: Model) -> #(Model, Effect(Msg)) {
   let update_cur_time = set_interval.update_time(UpdateTime)
-  let event_source = lustre_event_source.init("./model_stream", EventSource)
+  let query_params =
+    window.self() |> window.location |> location.search |> result.unwrap(or: "")
+  let event_source =
+    lustre_event_source.init("./model_stream?" <> query_params, EventSource)
 
   #(flags, effect.batch([update_cur_time, event_source]))
 }
@@ -69,8 +74,8 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           downtown:,
           north_direction_label:,
           south_direction_label:,
-          highlighted_train: _,
-          connecting_trains: _,
+          highlighted_train:,
+          connecting_trains:,
           event_source: _,
           cur_time: _,
           is_fav: _,
@@ -87,6 +92,8 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             downtown:,
             north_direction_label:,
             south_direction_label:,
+            highlighted_train:,
+            connecting_trains:,
           ),
           effect.none(),
         )
