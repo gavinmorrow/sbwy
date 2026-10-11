@@ -8,6 +8,7 @@ import gleam/time/timestamp
 import gleam/uri
 import lustre/attribute
 import lustre/element/html
+import subway_gleam/server/connecting_trains
 import wisp
 
 import subway_gleam/gtfs/rt
@@ -66,7 +67,8 @@ pub fn model(
     |> result.try(st.parse_stop_id)
     |> result.map(pair.first)
     |> option.from_result
-  let connecting_trains = query |> list.key_find("connecting_trains")
+  let connecting_trains_raw = query |> list.key_find("connecting_trains")
+  let connecting_trains = connecting_trains.from_query_params(query, state)
 
   let data = state.fetch_gtfs(state)
 
@@ -112,7 +114,7 @@ pub fn model(
         arrival.time,
         trip_id,
         state.schedule,
-        connecting_trains,
+        connecting_trains_raw,
       ))
     })
 
@@ -132,6 +134,7 @@ pub fn model(
     headsign:,
     stops:,
     highlighted_stop:,
+    connecting_trains:,
     event_source: live_status.Unavailable,
     cur_time: cur_time,
   ))

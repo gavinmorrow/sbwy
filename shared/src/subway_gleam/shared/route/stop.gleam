@@ -132,9 +132,7 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
         html.text(alert_summary),
       ]),
     ]),
-    html.aside([attribute.id("connecting-trains")], [
-      html.li([], list.map(connecting_trains, connecting_train.li(_, cur_time))),
-    ]),
+    connecting_train.list(connecting_trains, cur_time),
     // TODO: buttons for expand
     html.main([attribute.class("arrival-list-wrapper")], [
       html.div([], [

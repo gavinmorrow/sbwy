@@ -51,6 +51,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           headsign:,
           stops:,
           highlighted_stop:,
+          connecting_trains:,
           event_source: _,
           cur_time: _,
         )) -> #(
@@ -61,6 +62,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             headsign:,
             stops:,
             highlighted_stop:,
+            connecting_trains:,
           ),
           effect.none(),
         )

@@ -1,5 +1,6 @@
 import gleam/dynamic/decode
 import gleam/json.{type Json}
+import gleam/list
 import gleam/option
 import gleam/result
 import gleam/time/timestamp.{type Timestamp}
@@ -65,7 +66,16 @@ pub fn to_json(connecting_train: ConnectingTrain) -> Json {
   ])
 }
 
-pub fn li(connecting_train: ConnectingTrain, current_time: Time) -> Element(a) {
+pub fn list(
+  connecting_trains: List(ConnectingTrain),
+  current_time: Time,
+) -> Element(a) {
+  html.aside([attribute.id("connecting-trains")], [
+    html.li([], list.map(connecting_trains, li(_, current_time))),
+  ])
+}
+
+fn li(connecting_train: ConnectingTrain, current_time: Time) -> Element(a) {
   let ConnectingTrain(
     trip_id: _,
     train_url:,
@@ -73,6 +83,7 @@ pub fn li(connecting_train: ConnectingTrain, current_time: Time) -> Element(a) {
     transfer_stop_name:,
     arrival_time:,
   ) = connecting_train
+
   html.li([], [
     html.a([attribute.href(train_url)], [
       route_bullet(route),

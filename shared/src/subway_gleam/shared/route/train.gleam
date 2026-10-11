@@ -8,6 +8,7 @@ import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/element/keyed
+import subway_gleam/shared/component/connecting_train.{type ConnectingTrain}
 
 import subway_gleam/gtfs/st
 import subway_gleam/shared/component/arrival_time
@@ -28,6 +29,7 @@ pub type Model {
     headsign: String,
     stops: List(Stop),
     highlighted_stop: option.Option(st.StopId),
+    connecting_trains: List(ConnectingTrain),
     event_source: LiveStatus,
     cur_time: Time,
   )
@@ -40,6 +42,7 @@ pub fn view(model: Model) -> Element(msg) {
     headsign:,
     stops:,
     highlighted_stop:,
+    connecting_trains:,
     event_source:,
     cur_time:,
   ) = model
@@ -59,6 +62,7 @@ pub fn view(model: Model) -> Element(msg) {
       html.br([]),
       live_status,
     ]),
+    connecting_train.list(connecting_trains, cur_time),
     keyed.ol([attribute.class("stops-list")], stops),
     navbar(),
   ])
@@ -73,6 +77,10 @@ pub fn model_decoder() -> decode.Decoder(Model) {
     "highlighted_stop",
     decode.optional(decode.string |> decode.map(st.StopId)),
   )
+  use connecting_trains <- decode.field(
+    "connecting_trains",
+    decode.list(of: connecting_train.decoder()),
+  )
   use cur_time <- decode.field("cur_time", time.decoder())
 
   decode.success(Model(
@@ -81,6 +89,7 @@ pub fn model_decoder() -> decode.Decoder(Model) {
     headsign:,
     stops:,
     highlighted_stop:,
+    connecting_trains:,
     event_source: live_status.Unavailable,
     cur_time:,
   ))
@@ -93,6 +102,7 @@ pub fn model_to_json(model: Model) -> json.Json {
     headsign:,
     stops:,
     highlighted_stop:,
+    connecting_trains:,
     event_source: _,
     cur_time:,
   ) = model
@@ -108,6 +118,10 @@ pub fn model_to_json(model: Model) -> json.Json {
         let st.StopId(str) = stop_id
         json.string(str)
       }),
+    ),
+    #(
+      "connecting_trains",
+      json.array(connecting_trains, of: connecting_train.to_json),
     ),
     #("cur_time", time.to_json(cur_time)),
   ])
