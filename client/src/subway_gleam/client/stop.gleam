@@ -70,6 +70,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           north_direction_label:,
           south_direction_label:,
           highlighted_train: _,
+          connecting_trains: _,
           event_source: _,
           cur_time: _,
           is_fav: _,

@@ -39,6 +39,9 @@ pub type Model {
     north_direction_label: String,
     south_direction_label: String,
     highlighted_train: option.Option(rt.TripId),
+    /// The train(s) that the user is transferring from. The head of the list is
+    /// the oldest train, and the tail the latest.
+    connecting_trains: List(ConnectingTrain),
     event_source: LiveStatus,
     cur_time: Time,
     is_fav: Bool,
@@ -59,6 +62,7 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
     north_direction_label:,
     south_direction_label:,
     highlighted_train:,
+    connecting_trains:,
     event_source:,
     cur_time:,
     is_fav:,
@@ -82,6 +86,7 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
         routes,
       )
     })
+
   let uptown =
     list.filter_map(uptown, arrival_li(
       for: _,
@@ -126,6 +131,9 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
         html.text(alert_summary),
       ]),
     ]),
+    html.aside([attribute.id("connecting-trains")], [
+      html.li([], list.map(connecting_trains, connecting_train_li(_, cur_time))),
+    ]),
     // TODO: buttons for expand
     html.main([attribute.class("arrival-list-wrapper")], [
       html.div([], [
@@ -159,6 +167,10 @@ pub fn model_decoder() -> decode.Decoder(Model) {
     "highlighted_train",
     decode.optional(decode.string |> decode.map(rt.TripId)),
   )
+  use connecting_trains <- decode.field(
+    "connecting_trains",
+    decode.list(of: connecting_train_decoder()),
+  )
   use uptown <- decode.field("uptown", decode.list(arrival_decoder()))
   use downtown <- decode.field("downtown", decode.list(arrival_decoder()))
   use north_direction_label <- decode.field(
@@ -183,6 +195,7 @@ pub fn model_decoder() -> decode.Decoder(Model) {
     north_direction_label:,
     south_direction_label:,
     highlighted_train:,
+    connecting_trains:,
     event_source: live_status.Unavailable,
     cur_time:,
     is_fav: False,
@@ -202,6 +215,7 @@ pub fn model_to_json(model: Model) -> json.Json {
     north_direction_label:,
     south_direction_label:,
     highlighted_train:,
+    connecting_trains:,
     // Can't encode an EventSource
     event_source: _,
     cur_time:,
@@ -223,6 +237,10 @@ pub fn model_to_json(model: Model) -> json.Json {
       json.nullable(from: highlighted_train, of: fn(id) {
         json.string(rt.trip_id_to_string(id))
       }),
+    ),
+    #(
+      "connecting_trains",
+      json.array(connecting_trains, of: connecting_train_to_json),
     ),
     #("uptown", json.array(uptown, arrival_to_json)),
     #("downtown", json.array(downtown, arrival_to_json)),
@@ -249,6 +267,82 @@ fn transfer_to_json(transfer: Transfer) -> json.Json {
   json.object([
     #("destination", stop_id_json.to_json(destination)),
     #("routes", json.array(routes, route_bullet.to_json)),
+  ])
+}
+
+pub type ConnectingTrain {
+  ConnectingTrain(
+    trip_id: rt.TripId,
+    train_url: String,
+    route: RouteBullet,
+    transfer_stop_name: Result(String, Nil),
+    arrival_time: timestamp.Timestamp,
+  )
+}
+
+fn connecting_train_decoder() -> decode.Decoder(ConnectingTrain) {
+  use trip_id <- decode.field("trip_id", decode.string |> decode.map(rt.TripId))
+  use train_url <- decode.field("train_url", decode.string)
+  use route <- decode.field("route", route_bullet.decoder())
+  use transfer_stop_name <- decode.field(
+    "transfer_stop_name",
+    decode.optional(decode.string) |> decode.map(option.to_result(_, Nil)),
+  )
+  use arrival_time <- decode.field("arrival_time", timestamp_json.decoder())
+
+  ConnectingTrain(
+    trip_id:,
+    train_url:,
+    route:,
+    transfer_stop_name:,
+    arrival_time:,
+  )
+  |> decode.success
+}
+
+fn connecting_train_to_json(connecting_train: ConnectingTrain) -> json.Json {
+  let ConnectingTrain(
+    trip_id:,
+    train_url:,
+    route:,
+    transfer_stop_name:,
+    arrival_time:,
+  ) = connecting_train
+  json.object([
+    #("trip_id", json.string(rt.trip_id_to_string(trip_id))),
+    #("train_url", json.string(train_url)),
+    #("route", route_bullet.to_json(route)),
+    #(
+      "transfer_stop_name",
+      json.nullable(option.from_result(transfer_stop_name), of: json.string),
+    ),
+    #("arrival_time", timestamp_json.to_json(arrival_time)),
+  ])
+}
+
+fn connecting_train_li(
+  connecting_train: ConnectingTrain,
+  current_time: Time,
+) -> Element(a) {
+  let ConnectingTrain(
+    trip_id: _,
+    train_url:,
+    route:,
+    transfer_stop_name:,
+    arrival_time:,
+  ) = connecting_train
+  html.li([], [
+    html.a([attribute.href(train_url)], [
+      route_bullet(route),
+      html.span([], [
+        html.text(
+          "Arriving at "
+          <> result.unwrap(transfer_stop_name, "unknown stop")
+          <> " in  ",
+        ),
+        arrival_time.arrival_time(arrival_time, current_time),
+      ]),
+    ]),
   ])
 }
 

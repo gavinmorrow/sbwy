@@ -1,4 +1,5 @@
 import gleam/dict
+import gleam/function
 import gleam/int
 import gleam/list
 import gleam/option
@@ -66,14 +67,81 @@ pub fn model(
   use <- log.time("model")
 
   // TODO: make this a function?
-  let highlighted_train =
+  let query =
     query
     |> option.to_result(Nil)
     |> result.try(uri.parse_query)
     |> result.unwrap(or: [])
+  let highlighted_train =
+    query
     |> list.key_find("train_id")
     |> result.map(rt.TripId)
     |> option.from_result
+  let connecting_trains_raw =
+    query
+    |> list.key_find("connecting_trains")
+  let #(_, connecting_trains) =
+    connecting_trains_raw
+    |> result.try(parse_connecting_trains)
+    |> result.unwrap(or: [])
+    |> list.map_fold("", fn(prev_connections, connection) {
+      let #(trip_id, stop_id) = connection
+
+      // TODO: make this a function?
+      let train_url =
+        "/train/"
+        <> rt.trip_id_to_string(trip_id)
+        <> "?"
+        <> uri.query_to_string([#("connecting-trains", prev_connections)])
+
+      let connection = {
+        use #(trip, stops) <- result.try(
+          state.fetch_gtfs(state) |> gtfs_store.trip(for: trip_id),
+        )
+
+        // TODO: copied from arrival_li(), should it be a function?
+        // TODO: use default route bullet instead of panicking
+        let assert Ok(route) = route.parse(trip.route)
+        let route =
+          state.schedule
+          |> st.route_data(for: route)
+          |> route_bullet.from_route_data
+
+        use arrival_time <- result.map(
+          list.find_map(in: stops, with: fn(stop) {
+            case stop.stop_id == stop_id {
+              True -> Ok(stop.time)
+              False -> Error(Nil)
+            }
+          }),
+        )
+
+        let transfer_stop_name =
+          state.schedule.stops
+          |> dict.get(stop_id)
+          |> result.map(fn(stop) { stop.name })
+
+        stop.ConnectingTrain(
+          trip_id:,
+          train_url:,
+          route:,
+          transfer_stop_name:,
+          arrival_time:,
+        )
+      }
+
+      case connection {
+        Ok(connection) -> {
+          let connections = case prev_connections {
+            "" -> rt.trip_id_to_string(trip_id)
+            _ -> prev_connections <> ";" <> rt.trip_id_to_string(trip_id)
+          }
+          #(connections, Ok(connection))
+        }
+        Error(Nil) -> #(prev_connections, Error(Nil))
+      }
+    })
+  let connecting_trains = list.filter_map(connecting_trains, function.identity)
 
   use stop_id <- result.try(
     st.parse_stop_id_no_direction(stop_id)
@@ -90,7 +158,8 @@ pub fn model(
   let data = state.fetch_gtfs(state)
 
   let #(alerted_routes, alert_summary) = alerts(data, stop_id, state.schedule)
-  let #(uptown, downtown) = arrivals(data, stop_id, state.schedule)
+  let #(uptown, downtown) =
+    arrivals(data, stop_id, state.schedule, connecting_trains_raw)
 
   let cur_time = time_zone.now(state.tz_db)
   let last_updated =
@@ -114,10 +183,24 @@ pub fn model(
     north_direction_label: stop.north_direction_label,
     south_direction_label: stop.south_direction_label,
     highlighted_train:,
+    connecting_trains:,
     event_source: live_status.Unavailable,
     cur_time:,
     is_fav: False,
   ))
+}
+
+fn parse_connecting_trains(
+  trains: String,
+) -> Result(List(#(rt.TripId, st.StopId)), Nil) {
+  string.split(trains, on: ";")
+  |> list.filter_map(fn(train) {
+    case string.split(train, on: ":") {
+      [trip_id, stop_id] -> Ok(#(rt.TripId(trip_id), st.StopId(stop_id)))
+      _ -> Error(Nil)
+    }
+  })
+  |> Ok
 }
 
 fn transfers(schedule: st.Schedule, stop: st.Stop) -> List(stop.Transfer) {
@@ -186,6 +269,7 @@ fn arrivals(
   data: gtfs_store.Data,
   stop_id: st.StopId,
   schedule: st.Schedule,
+  connecting_trains: Result(String, Nil),
 ) -> #(List(stop.Arrival), List(stop.Arrival)) {
   gtfs_store.arrivals(data, for: stop_id)
   |> result.unwrap(or: [])
@@ -194,7 +278,13 @@ fn arrivals(
   })
   |> list.fold(from: #([], []), with: fn(acc, update) {
     let #(uptown_acc, downtown_acc) = acc
-    let li = arrival_li(update, schedule, gtfs_store.final_stop(data, for: _))
+    let li =
+      arrival_li(
+        update,
+        schedule,
+        gtfs_store.final_stop(data, for: _),
+        connecting_trains,
+      )
     case update.1.direction {
       st.North -> #([li, ..uptown_acc], downtown_acc)
       st.South -> #(uptown_acc, [li, ..downtown_acc])
@@ -288,6 +378,7 @@ fn arrival_li(
   update: #(rt.Trip, rt.TrainStopping),
   schedule: st.Schedule,
   get_final_stop: fn(st.ShapeId) -> Result(st.StopId, Nil),
+  connecting_trains: Result(String, Nil),
 ) -> stop.Arrival {
   let #(trip, rt.TrainStopping(time:, stop_id:, direction:)) = update
 
@@ -306,9 +397,21 @@ fn arrival_li(
   }
 
   let query =
-    uri.query_to_string([
-      #("stop_id", st.stop_id_to_string(stop_id, option.Some(direction))),
-    ])
+    uri.query_to_string(
+      [
+        #(
+          "stop_id",
+          st.stop_id_to_string(stop_id, option.Some(direction)) |> Ok,
+        ),
+        #("connecting_trains", connecting_trains),
+      ]
+      |> list.filter_map(fn(query) {
+        case query {
+          #(key, Ok(value)) -> Ok(#(key, value))
+          _ -> Error(Nil)
+        }
+      }),
+    )
   let train_url = "/train/" <> rt.trip_id_to_string(trip.id) <> "/?" <> query
 
   // TODO: use default route bullet instead of panicking

@@ -308,7 +308,7 @@ body {
 }
 
 .arrival-time {
-  display: flex;
+  display: inline-flex;
   flex-direction: row;
   gap: 0.5em;
   height: 100%;

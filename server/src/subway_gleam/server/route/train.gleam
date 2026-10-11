@@ -55,15 +55,18 @@ pub fn model(
   query: option.Option(String),
 ) -> Result(train.Model, Error) {
   // TODO: make this a function?
-  let highlighted_stop =
+  let query =
     query
     |> option.to_result(Nil)
     |> result.try(uri.parse_query)
     |> result.unwrap(or: [])
+  let highlighted_stop =
+    query
     |> list.key_find("stop_id")
     |> result.try(st.parse_stop_id)
     |> result.map(pair.first)
     |> option.from_result
+  let connecting_trains = query |> list.key_find("connecting_trains")
 
   let data = state.fetch_gtfs(state)
 
@@ -109,6 +112,7 @@ pub fn model(
         arrival.time,
         trip_id,
         state.schedule,
+        connecting_trains,
       ))
     })
 
@@ -155,12 +159,22 @@ fn stop_li(
   time: timestamp.Timestamp,
   trip_id: rt.TripId,
   schedule: st.Schedule,
+  connecting_trains: Result(String, Nil),
 ) -> train.Stop {
   let stop_url = {
     let stop_id = stop.id |> st.stop_id_to_string(direction: option.None)
     let train_id = rt.trip_id_to_string(trip_id)
 
-    let query = uri.query_to_string([#("train_id", train_id)])
+    let query = {
+      let connection = train_id <> ":" <> stop_id
+      uri.query_to_string([
+        #("train_id", train_id),
+        #("connecting_trains", case connecting_trains {
+          Ok(connections) -> connections <> ";" <> connection
+          Error(Nil) -> connection
+        }),
+      ])
+    }
     "/stop/" <> stop_id <> "?" <> query
   }
 

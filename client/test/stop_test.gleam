@@ -174,6 +174,7 @@ fn default_model() -> Model {
     north_direction_label: "Uptown",
     south_direction_label: "Downtown",
     highlighted_train: option.None,
+    connecting_trains: [],
     event_source: live_status.Unavailable,
     cur_time: unix_epoch(),
     is_fav: False,

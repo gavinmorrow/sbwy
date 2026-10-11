@@ -14,7 +14,7 @@ pub fn arrival_time(
   arriving_at time: timestamp.Timestamp,
   cur_time cur_time: Time,
 ) -> element.Element(msg) {
-  html.div([attribute.class("arrival-time")], [
+  html.span([attribute.class("arrival-time")], [
     html.span([attribute.class("relative-time")], [
       html.text(relative_time(from: cur_time.timestamp, to: time)),
     ]),

@@ -179,6 +179,7 @@ fn ewe_handler(
     // TODO: figure out some abstraction for this. also move out of this file
     ["stop", stop_id, "model_stream"] ->
       sse_gtfs(req, state_ref, fn() {
+        // TODO: pass in query
         stop.model(state, stop_id, option.None)
         |> result.map(shared_stop.model_to_json)
       })
