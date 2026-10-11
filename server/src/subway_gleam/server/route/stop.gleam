@@ -23,6 +23,7 @@ import subway_gleam/server/lustre_middleware.{Document, try_lustre_res}
 import subway_gleam/server/state
 import subway_gleam/server/state/gtfs_store
 import subway_gleam/server/time_zone
+import subway_gleam/shared/component/connecting_train.{ConnectingTrain}
 import subway_gleam/shared/component/route_bullet
 import subway_gleam/shared/route/stop
 import subway_gleam/shared/util
@@ -121,7 +122,7 @@ pub fn model(
           |> dict.get(stop_id)
           |> result.map(fn(stop) { stop.name })
 
-        stop.ConnectingTrain(
+        ConnectingTrain(
           trip_id:,
           train_url:,
           route:,

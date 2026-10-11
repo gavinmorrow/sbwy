@@ -10,16 +10,17 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/element/keyed
 import lustre/event
-import subway_gleam/shared/component/last_updated
-import subway_gleam/shared/route/stops
 
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
 import subway_gleam/shared/component/arrival_time.{arrival_time}
+import subway_gleam/shared/component/connecting_train.{type ConnectingTrain}
+import subway_gleam/shared/component/last_updated
 import subway_gleam/shared/component/navbar.{navbar}
 import subway_gleam/shared/component/route_bullet.{
   type RouteBullet, route_bullet,
 }
+import subway_gleam/shared/route/stops
 import subway_gleam/shared/util
 import subway_gleam/shared/util/live_status.{type LiveStatus}
 import subway_gleam/shared/util/stop_id_json
@@ -132,7 +133,7 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
       ]),
     ]),
     html.aside([attribute.id("connecting-trains")], [
-      html.li([], list.map(connecting_trains, connecting_train_li(_, cur_time))),
+      html.li([], list.map(connecting_trains, connecting_train.li(_, cur_time))),
     ]),
     // TODO: buttons for expand
     html.main([attribute.class("arrival-list-wrapper")], [
@@ -169,7 +170,7 @@ pub fn model_decoder() -> decode.Decoder(Model) {
   )
   use connecting_trains <- decode.field(
     "connecting_trains",
-    decode.list(of: connecting_train_decoder()),
+    decode.list(of: connecting_train.decoder()),
   )
   use uptown <- decode.field("uptown", decode.list(arrival_decoder()))
   use downtown <- decode.field("downtown", decode.list(arrival_decoder()))
@@ -240,7 +241,7 @@ pub fn model_to_json(model: Model) -> json.Json {
     ),
     #(
       "connecting_trains",
-      json.array(connecting_trains, of: connecting_train_to_json),
+      json.array(connecting_trains, of: connecting_train.to_json),
     ),
     #("uptown", json.array(uptown, arrival_to_json)),
     #("downtown", json.array(downtown, arrival_to_json)),
@@ -267,82 +268,6 @@ fn transfer_to_json(transfer: Transfer) -> json.Json {
   json.object([
     #("destination", stop_id_json.to_json(destination)),
     #("routes", json.array(routes, route_bullet.to_json)),
-  ])
-}
-
-pub type ConnectingTrain {
-  ConnectingTrain(
-    trip_id: rt.TripId,
-    train_url: String,
-    route: RouteBullet,
-    transfer_stop_name: Result(String, Nil),
-    arrival_time: timestamp.Timestamp,
-  )
-}
-
-fn connecting_train_decoder() -> decode.Decoder(ConnectingTrain) {
-  use trip_id <- decode.field("trip_id", decode.string |> decode.map(rt.TripId))
-  use train_url <- decode.field("train_url", decode.string)
-  use route <- decode.field("route", route_bullet.decoder())
-  use transfer_stop_name <- decode.field(
-    "transfer_stop_name",
-    decode.optional(decode.string) |> decode.map(option.to_result(_, Nil)),
-  )
-  use arrival_time <- decode.field("arrival_time", timestamp_json.decoder())
-
-  ConnectingTrain(
-    trip_id:,
-    train_url:,
-    route:,
-    transfer_stop_name:,
-    arrival_time:,
-  )
-  |> decode.success
-}
-
-fn connecting_train_to_json(connecting_train: ConnectingTrain) -> json.Json {
-  let ConnectingTrain(
-    trip_id:,
-    train_url:,
-    route:,
-    transfer_stop_name:,
-    arrival_time:,
-  ) = connecting_train
-  json.object([
-    #("trip_id", json.string(rt.trip_id_to_string(trip_id))),
-    #("train_url", json.string(train_url)),
-    #("route", route_bullet.to_json(route)),
-    #(
-      "transfer_stop_name",
-      json.nullable(option.from_result(transfer_stop_name), of: json.string),
-    ),
-    #("arrival_time", timestamp_json.to_json(arrival_time)),
-  ])
-}
-
-fn connecting_train_li(
-  connecting_train: ConnectingTrain,
-  current_time: Time,
-) -> Element(a) {
-  let ConnectingTrain(
-    trip_id: _,
-    train_url:,
-    route:,
-    transfer_stop_name:,
-    arrival_time:,
-  ) = connecting_train
-  html.li([], [
-    html.a([attribute.href(train_url)], [
-      route_bullet(route),
-      html.span([], [
-        html.text(
-          "Arriving at "
-          <> result.unwrap(transfer_stop_name, "unknown stop")
-          <> " in  ",
-        ),
-        arrival_time.arrival_time(arrival_time, current_time),
-      ]),
-    ]),
   ])
 }
 
