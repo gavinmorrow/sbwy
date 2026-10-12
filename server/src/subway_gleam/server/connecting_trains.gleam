@@ -28,13 +28,25 @@ pub fn to_string(
 }
 
 fn connecting_train_to_string(connection: ConnectingTrain) -> String {
-  let trip_id = rt.trip_id_to_string(connection.trip_id)
-  let departing_id = case connection.departing_stop {
-    option.Some(connecting_train.ConnectingStop(id: st.StopId(id), ..)) -> id
+  connecting_train_parts_to_string(
+    connection.trip_id,
+    connection.departing_stop |> option.map(fn(s) { s.id }),
+    connection.arriving_stop |> option.map(fn(s) { s.id }),
+  )
+}
+
+fn connecting_train_parts_to_string(
+  trip_id: rt.TripId,
+  departing_stop: Option(st.StopId),
+  arriving_stop: Option(st.StopId),
+) -> String {
+  let trip_id = rt.trip_id_to_string(trip_id)
+  let departing_id = case departing_stop {
+    option.Some(st.StopId(id)) -> id
     option.None -> ""
   }
-  let arriving_id = case connection.arriving_stop {
-    option.Some(connecting_train.ConnectingStop(id: st.StopId(id), ..)) -> id
+  let arriving_id = case arriving_stop {
+    option.Some(st.StopId(id)) -> id
     option.None -> ""
   }
   trip_id <> ":" <> departing_id <> "-" <> arriving_id
@@ -65,12 +77,27 @@ pub fn from_query_params(
       let #(trip_id, departing_stop_id, arriving_stop_id) = connection
 
       // TODO: make this a function?
-      // FIXME: discards arrival of current connection
+      // TODO: should this go to a stop page or a train page? + which stop page?
+      // FIXME: get rid of assert
+      let assert option.Some(st.StopId(train_url_stop_id)) =
+        arriving_stop_id |> option.or(departing_stop_id)
+        as "either arriving or departing should be set"
+      let current_connection_str =
+        connecting_train_parts_to_string(
+          trip_id,
+          departing_stop_id,
+          arriving_stop_id,
+        )
       let train_url =
-        "/train/"
-        <> rt.trip_id_to_string(trip_id)
+        "/stop/"
+        <> train_url_stop_id
         <> "?"
-        <> uri.query_to_string([#("connecting-trains", prev_connections)])
+        <> uri.query_to_string([
+          #("connecting_trains", case prev_connections {
+            "" -> current_connection_str
+            _ -> prev_connections <> ";" <> current_connection_str
+          }),
+        ])
 
       let connection = {
         use #(trip, stops) <- result.try(
@@ -99,9 +126,10 @@ pub fn from_query_params(
 
       case connection {
         Ok(connection) -> {
+          let connection_str = connecting_train_to_string(connection)
           let connections = case prev_connections {
-            "" -> rt.trip_id_to_string(trip_id)
-            _ -> prev_connections <> ";" <> rt.trip_id_to_string(trip_id)
+            "" -> connection_str
+            _ -> prev_connections <> ";" <> connection_str
           }
           #(connections, Ok(connection))
         }
