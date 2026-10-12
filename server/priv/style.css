@@ -61,6 +61,46 @@ body {
   }
 }
 
+#connecting-trains {
+  /* background-color: var(--color-bg-1); */
+  margin-top: 1em;
+  /* padding: 0.5em; */
+  /* border-radius: 1em; */
+
+  & > ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    & > li {
+      background-color: var(--color-bg-row-highlight);
+      padding: 0.25em;
+      border-radius: 1em;
+
+      & + li {
+        margin-top: 0.25lh;
+      }
+    }
+  }
+
+  & a {
+    color: var(--color-text);
+    text-decoration: none;
+
+    display: flex;
+    gap: 0.25em;
+    align-items: center;
+
+    & .route-bullet {
+      flex-shrink: 0;
+    }
+
+    & .description {
+      flex-grow: 1;
+    }
+  }
+}
+
 .arrival-list,
 .stops-list,
 .stops-nearby-list,
@@ -241,11 +281,11 @@ body {
 }
 
 .route-bullet {
-  color: var(--color-bullet-text);
+  color: var(--color-bullet-text) !important;
   position: relative;
   &::before {
     position: absolute;
-    background-color: var(--color-bullet-bg);
+    background-color: var(--color-bullet-bg) !important;
     content: "";
     z-index: -1;
     border-radius: 100%;

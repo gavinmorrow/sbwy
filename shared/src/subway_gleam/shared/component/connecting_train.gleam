@@ -83,7 +83,7 @@ pub fn list(
   current_time: Time,
 ) -> Element(a) {
   html.aside([attribute.id("connecting-trains")], [
-    html.li([], list.filter_map(connecting_trains, li(_, current_time))),
+    html.ol([], list.filter_map(connecting_trains, li(_, current_time))),
   ])
 }
 
@@ -107,14 +107,12 @@ fn li(
   html.li([], [
     html.a([attribute.href(train_url)], [
       route_bullet(route),
-      html.span([], [
+      html.span([attribute.class("description")], [
         html.text(
-          "Arriving at "
-          <> result.unwrap(transfer_stop_name, "unknown stop")
-          <> " in  ",
+          "Arriving at " <> result.unwrap(transfer_stop_name, "unknown stop"),
         ),
-        arrival_time.arrival_time(arrival_time, current_time),
       ]),
+      arrival_time.arrival_time(arrival_time, current_time),
     ]),
   ])
   |> Ok
