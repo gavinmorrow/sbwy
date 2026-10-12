@@ -276,6 +276,7 @@ pub type Arrival {
     route: RouteBullet,
     headsign: Result(String, Nil),
     time: timestamp.Timestamp,
+    dimmed: Bool,
   )
 }
 
@@ -291,12 +292,21 @@ fn arrival_decoder() -> decode.Decoder(Arrival) {
     decode.optional(decode.string) |> decode.map(option.to_result(_, Nil)),
   )
   use time <- decode.field("time", timestamp_json.decoder())
+  use dimmed <- decode.field("dimmed", decode.bool)
 
-  decode.success(Arrival(train_id:, train_url:, route:, headsign:, time:))
+  decode.success(Arrival(
+    train_id:,
+    train_url:,
+    route:,
+    headsign:,
+    time:,
+    dimmed:,
+  ))
 }
 
 fn arrival_to_json(arrival: Arrival) -> json.Json {
-  let Arrival(train_id:, train_url:, route:, headsign:, time:) = arrival
+  let Arrival(train_id:, train_url:, route:, headsign:, time:, dimmed:) =
+    arrival
 
   json.object([
     #("train_id", json.string(rt.trip_id_to_string(train_id))),
@@ -304,6 +314,7 @@ fn arrival_to_json(arrival: Arrival) -> json.Json {
     #("route", route_bullet.to_json(route)),
     #("headsign", json.nullable(option.from_result(headsign), of: json.string)),
     #("time", timestamp_json.to_json(time)),
+    #("dimmed", json.bool(dimmed)),
   ])
 }
 
@@ -312,7 +323,8 @@ fn arrival_li(
   highlighting highlighted_train: option.Option(rt.TripId),
   at cur_time: Time,
 ) -> Result(#(String, Element(msg)), Nil) {
-  let Arrival(train_id:, train_url:, route:, headsign:, time:) = arrival
+  let Arrival(train_id:, train_url:, route:, headsign:, time:, dimmed:) =
+    arrival
 
   // Filter to not show departed trains
   let dt = time |> util.min_from(cur_time.timestamp)
@@ -331,7 +343,10 @@ fn arrival_li(
       html.a(
         [
           attribute.href(train_url),
-          attribute.classes([#("highlight", is_highlighted)]),
+          attribute.classes([
+            #("highlight", is_highlighted),
+            #("dimmed", dimmed),
+          ]),
         ],
         [
           route_bullet(route),

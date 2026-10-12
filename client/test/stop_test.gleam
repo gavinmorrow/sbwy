@@ -67,6 +67,7 @@ pub fn highlighted_train_is_highlighted_test() -> Nil {
       route: route_bullet_a,
       headsign: Error(Nil),
       time: timestamp.add(unix_epoch().timestamp, duration.minutes(2)),
+      dimmed: False,
     )
 
   let app =
@@ -199,6 +200,7 @@ fn arrival(in time: duration.Duration) -> Arrival {
     route: route_bullet_a,
     headsign: Error(Nil),
     time: timestamp.add(unix_epoch().timestamp, time),
+    dimmed: False,
   )
 }
 

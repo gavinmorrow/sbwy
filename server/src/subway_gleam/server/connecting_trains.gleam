@@ -14,6 +14,24 @@ import subway_gleam/shared/component/connecting_train.{
 }
 import subway_gleam/shared/component/route_bullet
 
+pub fn to_string(
+  connecting_trains: List(ConnectingTrain),
+) -> Result(String, Nil) {
+  case connecting_trains {
+    [] -> Error(Nil)
+    _ ->
+      list.map(connecting_trains, connecting_train_to_string)
+      |> string.join(";")
+      |> Ok
+  }
+}
+
+fn connecting_train_to_string(connection: ConnectingTrain) -> String {
+  let trip_id = rt.trip_id_to_string(connection.trip_id)
+  let st.StopId(stop_id) = connection.transfer_stop_id
+  trip_id <> ":" <> stop_id
+}
+
 pub fn from_query_params(
   query: List(#(String, String)),
   state: state.State,
@@ -66,6 +84,7 @@ pub fn from_query_params(
           trip_id:,
           train_url:,
           route:,
+          transfer_stop_id: stop_id,
           transfer_stop_name:,
           arrival_time:,
         )
@@ -89,11 +108,15 @@ fn parse_connecting_trains(
   trains: String,
 ) -> Result(List(#(rt.TripId, st.StopId)), Nil) {
   string.split(trains, on: ";")
-  |> list.filter_map(fn(train) {
-    case string.split(train, on: ":") {
-      [trip_id, stop_id] -> Ok(#(rt.TripId(trip_id), st.StopId(stop_id)))
-      _ -> Error(Nil)
-    }
-  })
+  |> list.filter_map(parse_connecting_train)
   |> Ok
+}
+
+fn parse_connecting_train(
+  train: String,
+) -> Result(#(rt.TripId, st.StopId), Nil) {
+  case string.split(train, on: ":") {
+    [trip_id, stop_id] -> Ok(#(rt.TripId(trip_id), st.StopId(stop_id)))
+    _ -> Error(Nil)
+  }
 }

@@ -11,18 +11,21 @@ import gleam/time/timestamp
 import gleam/uri
 import lustre/attribute
 import lustre/element/html
-import subway_gleam/server/connecting_trains
 import wisp
 
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
 import subway_gleam/gtfs/st/route.{type Route}
+import subway_gleam/server/connecting_trains
 import subway_gleam/server/hydration_scripts.{hydration_scripts}
 import subway_gleam/server/log
 import subway_gleam/server/lustre_middleware.{Document, try_lustre_res}
 import subway_gleam/server/state
 import subway_gleam/server/state/gtfs_store
 import subway_gleam/server/time_zone
+import subway_gleam/shared/component/connecting_train.{
+  type ConnectingTrain, ConnectingTrain,
+}
 import subway_gleam/shared/component/route_bullet
 import subway_gleam/shared/route/stop
 import subway_gleam/shared/util
@@ -77,7 +80,6 @@ pub fn model(
     |> list.key_find("train_id")
     |> result.map(rt.TripId)
     |> option.from_result
-  let connecting_trains_raw = query |> list.key_find("connecting_trains")
   let connecting_trains = connecting_trains.from_query_params(query, state)
 
   use stop_id <- result.try(
@@ -96,7 +98,7 @@ pub fn model(
 
   let #(alerted_routes, alert_summary) = alerts(data, stop_id, state.schedule)
   let #(uptown, downtown) =
-    arrivals(data, stop_id, state.schedule, connecting_trains_raw)
+    arrivals(data, stop_id, state.schedule, connecting_trains)
 
   let cur_time = time_zone.now(state.tz_db)
   let last_updated =
@@ -193,7 +195,7 @@ fn arrivals(
   data: gtfs_store.Data,
   stop_id: st.StopId,
   schedule: st.Schedule,
-  connecting_trains: Result(String, Nil),
+  connecting_trains: List(ConnectingTrain),
 ) -> #(List(stop.Arrival), List(stop.Arrival)) {
   gtfs_store.arrivals(data, for: stop_id)
   |> result.unwrap(or: [])
@@ -302,7 +304,7 @@ fn arrival_li(
   update: #(rt.Trip, rt.TrainStopping),
   schedule: st.Schedule,
   get_final_stop: fn(st.ShapeId) -> Result(st.StopId, Nil),
-  connecting_trains: Result(String, Nil),
+  connecting_trains: List(ConnectingTrain),
 ) -> stop.Arrival {
   let #(trip, rt.TrainStopping(time:, stop_id:, direction:)) = update
 
@@ -327,7 +329,7 @@ fn arrival_li(
           "stop_id",
           st.stop_id_to_string(stop_id, option.Some(direction)) |> Ok,
         ),
-        #("connecting_trains", connecting_trains),
+        #("connecting_trains", connecting_trains.to_string(connecting_trains)),
       ]
       |> list.filter_map(fn(query) {
         case query {
@@ -343,5 +345,11 @@ fn arrival_li(
   let route =
     schedule |> st.route_data(for: route) |> route_bullet.from_route_data
 
-  stop.Arrival(train_id: trip.id, train_url:, route:, headsign:, time:)
+  let dimmed = case list.last(connecting_trains) {
+    Ok(ConnectingTrain(arrival_time:, ..)) ->
+      timestamp.compare(arrival_time, time) == order.Gt
+    _ -> False
+  }
+
+  stop.Arrival(train_id: trip.id, train_url:, route:, headsign:, time:, dimmed:)
 }

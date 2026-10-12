@@ -92,6 +92,9 @@ body {
     text-decoration: none;
 
     background-color: var(--li-color-bg);
+    &.dimmed {
+      filter: brightness(0.6);
+    }
     &.highlight {
       /* TODO: show highlight differently from active */
       /* TODO: constrast between highlight bg and headsign is too low */

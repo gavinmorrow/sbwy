@@ -9,6 +9,7 @@ import lustre/element.{type Element}
 import lustre/element/html
 
 import subway_gleam/gtfs/rt
+import subway_gleam/gtfs/st
 import subway_gleam/shared/component/arrival_time
 import subway_gleam/shared/component/route_bullet.{
   type RouteBullet, route_bullet,
@@ -21,6 +22,7 @@ pub type ConnectingTrain {
     trip_id: rt.TripId,
     train_url: String,
     route: RouteBullet,
+    transfer_stop_id: st.StopId,
     transfer_stop_name: Result(String, Nil),
     arrival_time: Timestamp,
   )
@@ -30,6 +32,10 @@ pub fn decoder() -> decode.Decoder(ConnectingTrain) {
   use trip_id <- decode.field("trip_id", decode.string |> decode.map(rt.TripId))
   use train_url <- decode.field("train_url", decode.string)
   use route <- decode.field("route", route_bullet.decoder())
+  use transfer_stop_id <- decode.field(
+    "transfer_stop_id",
+    decode.string |> decode.map(st.StopId),
+  )
   use transfer_stop_name <- decode.field(
     "transfer_stop_name",
     decode.optional(decode.string) |> decode.map(option.to_result(_, Nil)),
@@ -40,6 +46,7 @@ pub fn decoder() -> decode.Decoder(ConnectingTrain) {
     trip_id:,
     train_url:,
     route:,
+    transfer_stop_id:,
     transfer_stop_name:,
     arrival_time:,
   )
@@ -51,13 +58,16 @@ pub fn to_json(connecting_train: ConnectingTrain) -> Json {
     trip_id:,
     train_url:,
     route:,
+    transfer_stop_id: st.StopId(transfer_stop_id),
     transfer_stop_name:,
     arrival_time:,
   ) = connecting_train
+
   json.object([
     #("trip_id", json.string(rt.trip_id_to_string(trip_id))),
     #("train_url", json.string(train_url)),
     #("route", route_bullet.to_json(route)),
+    #("transfer_stop_id", json.string(transfer_stop_id)),
     #(
       "transfer_stop_name",
       json.nullable(option.from_result(transfer_stop_name), of: json.string),
@@ -80,6 +90,7 @@ fn li(connecting_train: ConnectingTrain, current_time: Time) -> Element(a) {
     trip_id: _,
     train_url:,
     route:,
+    transfer_stop_id: _,
     transfer_stop_name:,
     arrival_time:,
   ) = connecting_train
