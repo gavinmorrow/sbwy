@@ -1,3 +1,4 @@
+import gleam/bool
 import gleam/dynamic/decode
 import gleam/json.{type Json}
 import gleam/list
@@ -7,6 +8,7 @@ import gleam/time/timestamp.{type Timestamp}
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
+import subway_gleam/shared/util
 
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
@@ -81,11 +83,14 @@ pub fn list(
   current_time: Time,
 ) -> Element(a) {
   html.aside([attribute.id("connecting-trains")], [
-    html.li([], list.map(connecting_trains, li(_, current_time))),
+    html.li([], list.filter_map(connecting_trains, li(_, current_time))),
   ])
 }
 
-fn li(connecting_train: ConnectingTrain, current_time: Time) -> Element(a) {
+fn li(
+  connecting_train: ConnectingTrain,
+  current_time: Time,
+) -> Result(Element(a), Nil) {
   let ConnectingTrain(
     trip_id: _,
     train_url:,
@@ -94,6 +99,10 @@ fn li(connecting_train: ConnectingTrain, current_time: Time) -> Element(a) {
     transfer_stop_name:,
     arrival_time:,
   ) = connecting_train
+
+  // Filter to not show transfers that have finished.
+  let dt = arrival_time |> util.min_from(current_time.timestamp)
+  use <- bool.guard(when: dt < 0, return: Error(Nil))
 
   html.li([], [
     html.a([attribute.href(train_url)], [
@@ -108,4 +117,5 @@ fn li(connecting_train: ConnectingTrain, current_time: Time) -> Element(a) {
       ]),
     ]),
   ])
+  |> Ok
 }
