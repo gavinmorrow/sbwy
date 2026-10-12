@@ -266,9 +266,9 @@ fn transfer_to_json(transfer: Transfer) -> json.Json {
   let Transfer(destination_url:, routes:, highlighted:) = transfer
 
   json.object([
-    #("destination", json.string(destination_url)),
+    #("destination_url", json.string(destination_url)),
     #("routes", json.array(routes, route_bullet.to_json)),
-    #("higlighted", json.bool(highlighted)),
+    #("highlighted", json.bool(highlighted)),
   ])
 }
 

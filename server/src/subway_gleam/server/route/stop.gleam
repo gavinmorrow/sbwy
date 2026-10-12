@@ -92,7 +92,12 @@ pub fn model(
     |> result.replace_error(UnknownStop(stop_id)),
   )
 
-  let transfers = transfers(state.schedule, stop)
+  let transfers =
+    transfers(
+      state.schedule,
+      stop,
+      connecting_trains.to_string(connecting_trains),
+    )
 
   let data = state.fetch_gtfs(state)
 
@@ -129,7 +134,11 @@ pub fn model(
   ))
 }
 
-fn transfers(schedule: st.Schedule, stop: st.Stop) -> List(stop.Transfer) {
+fn transfers(
+  schedule: st.Schedule,
+  stop: st.Stop,
+  connecting_trains: Result(String, Nil),
+) -> List(stop.Transfer) {
   schedule.transfers
   |> dict.get(stop.id)
   |> result.unwrap(or: set.new())
@@ -146,8 +155,12 @@ fn transfers(schedule: st.Schedule, stop: st.Stop) -> List(stop.Transfer) {
       |> list.sort(st.route_compare)
       |> list.map(route_bullet.from_route_data)
 
+    let query = case connecting_trains {
+      Ok(connecting_trains) -> "?connecting_trains=" <> connecting_trains
+      Error(Nil) -> ""
+    }
     stop.Transfer(
-      destination_url: "/stop/" <> desination_id <> "/",
+      destination_url: "/stop/" <> desination_id <> "/" <> query,
       routes:,
       highlighted: transfer.destination == stop.id,
     )
