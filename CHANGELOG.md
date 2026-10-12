@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- When clicking between stops and trains, a log of transfers will be created at
+  the top of the screen.
+
 ## 2026-10-02
 
 ### Changed
