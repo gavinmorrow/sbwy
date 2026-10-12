@@ -23,7 +23,6 @@ import subway_gleam/shared/component/route_bullet.{
 import subway_gleam/shared/route/stops
 import subway_gleam/shared/util
 import subway_gleam/shared/util/live_status.{type LiveStatus}
-import subway_gleam/shared/util/stop_id_json
 import subway_gleam/shared/util/time.{type Time}
 import subway_gleam/shared/util/timestamp_json
 
@@ -52,7 +51,7 @@ pub type Model {
 // TODO: should the Msg type be moved in here?
 pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
   let Model(
-    id:,
+    id: _,
     name:,
     last_updated:,
     transfers:,
@@ -75,14 +74,12 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
   let transfers =
     list.map(transfers, fn(transfer) {
       let routes = list.map(transfer.routes, route_bullet.route_bullet)
-      let highlighted = transfer.destination == id
-      let st.StopId(id) = transfer.destination
 
       html.a(
         [
           attribute.class("bullet-group"),
-          attribute.classes([#("highlight", highlighted)]),
-          attribute.href("/stop/" <> id <> "/"),
+          attribute.classes([#("highlight", transfer.highlighted)]),
+          attribute.href(transfer.destination_url),
         ],
         routes,
       )
@@ -250,22 +247,28 @@ pub fn model_to_json(model: Model) -> json.Json {
 }
 
 pub type Transfer {
-  Transfer(destination: st.StopId, routes: List(route_bullet.RouteBullet))
+  Transfer(
+    destination_url: String,
+    routes: List(route_bullet.RouteBullet),
+    highlighted: Bool,
+  )
 }
 
 fn transfer_decoder() -> decode.Decoder(Transfer) {
-  use destination <- decode.field("destination", stop_id_json.decoder())
+  use destination_url <- decode.field("destination_url", decode.string)
   use routes <- decode.field("routes", decode.list(route_bullet.decoder()))
+  use highlighted <- decode.field("highlighted", decode.bool)
 
-  decode.success(Transfer(destination:, routes:))
+  decode.success(Transfer(destination_url:, routes:, highlighted:))
 }
 
 fn transfer_to_json(transfer: Transfer) -> json.Json {
-  let Transfer(destination:, routes:) = transfer
+  let Transfer(destination_url:, routes:, highlighted:) = transfer
 
   json.object([
-    #("destination", stop_id_json.to_json(destination)),
+    #("destination", json.string(destination_url)),
     #("routes", json.array(routes, route_bullet.to_json)),
+    #("higlighted", json.bool(highlighted)),
   ])
 }
 

@@ -134,6 +134,7 @@ fn transfers(schedule: st.Schedule, stop: st.Stop) -> List(stop.Transfer) {
   |> dict.get(stop.id)
   |> result.unwrap(or: set.new())
   |> set.map(fn(transfer) {
+    let st.StopId(desination_id) = transfer.destination
     let routes =
       schedule
       |> st.daytime_routes(for: transfer.destination)
@@ -145,7 +146,11 @@ fn transfers(schedule: st.Schedule, stop: st.Stop) -> List(stop.Transfer) {
       |> list.sort(st.route_compare)
       |> list.map(route_bullet.from_route_data)
 
-    stop.Transfer(destination: transfer.destination, routes:)
+    stop.Transfer(
+      destination_url: "/stop/" <> desination_id <> "/",
+      routes:,
+      highlighted: transfer.destination == stop.id,
+    )
   })
   // TODO: also need to sort each group in sort order
   |> set.to_list

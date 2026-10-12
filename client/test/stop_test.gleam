@@ -17,7 +17,7 @@ import subway_gleam/shared/util/time.{type Time, Time}
 
 import subway_gleam/client/stop.{type Msg, ToggleFavBtnPressed, update} as _
 import subway_gleam/shared/route/stop.{
-  type Arrival, type Model, Arrival, Model, Transfer, view,
+  type Arrival, type Model, Arrival, Model, view,
 } as _
 
 pub fn arrivals_are_in_correct_format_test() -> Nil {
@@ -35,28 +35,6 @@ pub fn arrivals_are_in_correct_format_test() -> Nil {
     title: "Times (absolute and countdown) are in hh:mm+? and <int>m format.",
     content: list.map(lis, element.to_string) |> string.join("\n"),
   )
-}
-
-pub fn transfer_for_current_stop_is_highlighted_test() -> Nil {
-  let transfer = Transfer(destination: stop_id_a27, routes: [route_bullet_a])
-
-  let app =
-    simulate(
-      Model(..default_model(), transfers: [
-        Transfer(destination: st.StopId("0"), routes: []),
-        transfer,
-        Transfer(destination: st.StopId("1"), routes: []),
-        Transfer(destination: st.StopId("2"), routes: []),
-      ]),
-    )
-
-  let transfers = query.find_all(transfers(), in: simulate.view(app))
-  let highlighted =
-    list.map(transfers, fn(transfer) {
-      transfer |> query.matches(query.class("highlight"))
-    })
-
-  assert highlighted == [False, True, False, False]
 }
 
 pub fn highlighted_train_is_highlighted_test() -> Nil {
@@ -210,9 +188,4 @@ fn arrival_lists() -> Query {
 
 fn arrival_lis() -> Query {
   query.child(of: arrival_lists(), matching: query.tag("li"))
-}
-
-fn transfers() -> Query {
-  query.element(query.id("transfers"))
-  |> query.descendant(matching: query.class("bullet-group"))
 }
