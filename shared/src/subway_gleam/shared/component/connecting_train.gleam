@@ -93,6 +93,20 @@ pub fn list(
 ) -> Element(a) {
   html.aside([attribute.id("connecting-trains")], [
     html.ol([], list.filter_map(connecting_trains, li(_, current_time))),
+    case connecting_trains {
+      [] -> element.none()
+      _ ->
+        html.form(
+          [
+            attribute.class("clear-transfers-form"),
+            attribute.action("./"),
+            attribute.method("get"),
+          ],
+          [
+            html.button([], [html.text("Clear transfers")]),
+          ],
+        )
+    },
   ])
 }
 
