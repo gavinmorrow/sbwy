@@ -28,6 +28,10 @@ body {
   margin-bottom: var(--nav-height);
 }
 
+h2 {
+  margin-bottom: 0.25lh;
+}
+
 #navbar {
   position: fixed;
   left: 0;

@@ -92,6 +92,7 @@ pub fn list(
   current_time: Time,
 ) -> Element(a) {
   html.aside([attribute.id("connecting-trains")], [
+    html.h2([], [html.text("Transfers")]),
     html.ol([], list.filter_map(connecting_trains, li(_, current_time))),
     case connecting_trains {
       [] -> element.none()
