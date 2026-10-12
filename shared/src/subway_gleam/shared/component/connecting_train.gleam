@@ -91,12 +91,12 @@ pub fn list(
   connecting_trains: List(ConnectingTrain),
   current_time: Time,
 ) -> Element(a) {
-  html.aside([attribute.id("connecting-trains")], [
-    html.h2([], [html.text("Transfers")]),
-    html.ol([], list.filter_map(connecting_trains, li(_, current_time))),
-    case connecting_trains {
-      [] -> element.none()
-      _ ->
+  case connecting_trains {
+    [] -> element.none()
+    _ ->
+      html.aside([attribute.id("connecting-trains")], [
+        html.h2([], [html.text("Transfers")]),
+        html.ol([], list.filter_map(connecting_trains, li(_, current_time))),
         html.form(
           [
             attribute.class("clear-transfers-form"),
@@ -106,9 +106,9 @@ pub fn list(
           [
             html.button([], [html.text("Clear transfers")]),
           ],
-        )
-    },
-  ])
+        ),
+      ])
+  }
 }
 
 fn li(
