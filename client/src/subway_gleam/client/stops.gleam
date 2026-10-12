@@ -83,7 +83,7 @@ fn watch_position() -> Effect(Msg) {
   let _id =
     geolocation.watch_position(
       on_success: fn(pos) { dispatch(UpdatePosition(pos)) },
-      on_error: fn(err) { todo },
+      on_error: fn(_err) { todo },
     )
   Nil
 }
