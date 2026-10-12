@@ -95,6 +95,13 @@ body {
       flex-shrink: 0;
     }
 
+    & .lines {
+      flex-grow: 1;
+
+      & > * {
+        display: flex;
+      }
+    }
     & .description {
       flex-grow: 1;
     }

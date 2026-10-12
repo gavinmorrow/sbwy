@@ -322,14 +322,23 @@ fn arrival_li(
     })
   }
 
-  let query =
+  let query = {
+    let st.StopId(stop_id_raw) = stop_id
+    // TODO: bad string manipulation :[
+    let connection = rt.trip_id_to_string(trip.id) <> ":" <> stop_id_raw
+
     uri.query_to_string(
       [
         #(
           "stop_id",
           st.stop_id_to_string(stop_id, option.Some(direction)) |> Ok,
         ),
-        #("connecting_trains", connecting_trains.to_string(connecting_trains)),
+        // TODO: bad string manipulation :[
+        #(
+          "connecting_trains",
+          connecting_trains.append_to_string(connection:, to: connecting_trains)
+            |> Ok,
+        ),
       ]
       |> list.filter_map(fn(query) {
         case query {
@@ -338,6 +347,7 @@ fn arrival_li(
         }
       }),
     )
+  }
   let train_url = "/train/" <> rt.trip_id_to_string(trip.id) <> "/?" <> query
 
   // TODO: use default route bullet instead of panicking
@@ -346,8 +356,13 @@ fn arrival_li(
     schedule |> st.route_data(for: route) |> route_bullet.from_route_data
 
   let dimmed = case list.last(connecting_trains) {
-    Ok(ConnectingTrain(arrival_time:, ..)) ->
-      timestamp.compare(arrival_time, time) == order.Gt
+    Ok(ConnectingTrain(
+      arriving_stop: option.Some(connecting_train.ConnectingStop(
+        time: arrival_time,
+        ..,
+      )),
+      ..,
+    )) -> timestamp.compare(arrival_time, time) == order.Gt
     _ -> False
   }
 

@@ -1,8 +1,10 @@
 import gleam/dict
 import gleam/function
 import gleam/list
+import gleam/option.{type Option}
 import gleam/result
 import gleam/string
+import gleam/time/timestamp
 import gleam/uri
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
@@ -28,8 +30,24 @@ pub fn to_string(
 
 fn connecting_train_to_string(connection: ConnectingTrain) -> String {
   let trip_id = rt.trip_id_to_string(connection.trip_id)
-  let st.StopId(stop_id) = connection.transfer_stop_id
-  trip_id <> ":" <> stop_id
+  let st.StopId(departing_id) = connection.departing_stop.id
+  case connection.arriving_stop {
+    option.Some(arriving_stop) -> {
+      let st.StopId(arriving_id) = arriving_stop.id
+      trip_id <> ":" <> departing_id <> "-" <> arriving_id
+    }
+    option.None -> trip_id <> ":" <> departing_id
+  }
+}
+
+pub fn append_to_string(
+  to connecting_trains: List(ConnectingTrain),
+  connection connection: String,
+) -> String {
+  case connecting_trains |> to_string {
+    Error(Nil) -> connection
+    Ok(connections) -> connections <> ";" <> connection
+  }
 }
 
 pub fn from_query_params(
@@ -44,7 +62,7 @@ pub fn from_query_params(
     |> result.try(parse_connecting_trains)
     |> result.unwrap(or: [])
     |> list.map_fold("", fn(prev_connections, connection) {
-      let #(trip_id, stop_id) = connection
+      let #(trip_id, departing_stop_id, arriving_stop_id) = connection
 
       // TODO: make this a function?
       let train_url =
@@ -66,28 +84,49 @@ pub fn from_query_params(
           |> st.route_data(for: route)
           |> route_bullet.from_route_data
 
-        use arrival_time <- result.map(
-          list.find_map(in: stops, with: fn(stop) {
-            case stop.stop_id == stop_id {
-              True -> Ok(stop.time)
-              False -> Error(Nil)
-            }
-          }),
-        )
-
-        let transfer_stop_name =
-          state.schedule.stops
-          |> dict.get(stop_id)
-          |> result.map(fn(stop) { stop.name })
+        let departing_time =
+          result.unwrap(
+            list.find_map(in: stops, with: fn(stop) {
+              case stop.stop_id == departing_stop_id {
+                True -> Ok(stop.time)
+                False -> Error(Nil)
+              }
+            }),
+            or: timestamp.unix_epoch,
+          )
 
         ConnectingTrain(
           trip_id:,
           train_url:,
           route:,
-          transfer_stop_id: stop_id,
-          transfer_stop_name:,
-          arrival_time:,
+          departing_stop: connecting_train.ConnectingStop(
+            id: departing_stop_id,
+            name: state.schedule.stops
+              |> dict.get(departing_stop_id)
+              |> result.map(fn(stop) { stop.name }),
+            time: departing_time,
+          ),
+          arriving_stop: option.then(arriving_stop_id, fn(id) {
+            use time <- option.map(
+              list.find_map(in: stops, with: fn(stop) {
+                case stop.stop_id == id {
+                  True -> Ok(stop.time)
+                  False -> Error(Nil)
+                }
+              })
+              |> option.from_result,
+            )
+
+            connecting_train.ConnectingStop(
+              id:,
+              name: state.schedule.stops
+                |> dict.get(id)
+                |> result.map(fn(stop) { stop.name }),
+              time:,
+            )
+          }),
         )
+        |> Ok
       }
 
       case connection {
@@ -106,7 +145,7 @@ pub fn from_query_params(
 
 fn parse_connecting_trains(
   trains: String,
-) -> Result(List(#(rt.TripId, st.StopId)), Nil) {
+) -> Result(List(#(rt.TripId, st.StopId, Option(st.StopId))), Nil) {
   string.split(trains, on: ";")
   |> list.filter_map(parse_connecting_train)
   |> Ok
@@ -114,9 +153,22 @@ fn parse_connecting_trains(
 
 fn parse_connecting_train(
   train: String,
-) -> Result(#(rt.TripId, st.StopId), Nil) {
+) -> Result(#(rt.TripId, st.StopId, Option(st.StopId)), Nil) {
   case string.split(train, on: ":") {
-    [trip_id, stop_id] -> Ok(#(rt.TripId(trip_id), st.StopId(stop_id)))
+    [trip_id, stop_ids] -> {
+      case string.split(stop_ids, on: "-") {
+        [departing] ->
+          Ok(#(rt.TripId(trip_id), st.StopId(departing), option.None))
+        [departing, arriving] ->
+          Ok(#(
+            rt.TripId(trip_id),
+            st.StopId(departing),
+            option.Some(st.StopId(arriving)),
+          ))
+
+        _ -> Error(Nil)
+      }
+    }
     _ -> Error(Nil)
   }
 }

@@ -169,12 +169,12 @@ fn stop_li(
     let train_id = rt.trip_id_to_string(trip_id)
 
     let query = {
-      let connection = train_id <> ":" <> stop_id
       uri.query_to_string([
         #("train_id", train_id),
+        // TODO: bad string manipulation :[
         #("connecting_trains", case connecting_trains {
-          Ok(connections) -> connections <> ";" <> connection
-          Error(Nil) -> connection
+          Ok(connections) -> connections <> "-" <> stop_id
+          Error(Nil) -> train_id <> ":-" <> stop_id
         }),
       ])
     }
