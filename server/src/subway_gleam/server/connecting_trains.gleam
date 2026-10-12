@@ -65,6 +65,7 @@ pub fn from_query_params(
       let #(trip_id, departing_stop_id, arriving_stop_id) = connection
 
       // TODO: make this a function?
+      // FIXME: discards arrival of current connection
       let train_url =
         "/train/"
         <> rt.trip_id_to_string(trip_id)
