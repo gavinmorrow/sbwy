@@ -24,7 +24,7 @@ pub type ConnectingTrain {
     trip_id: rt.TripId,
     train_url: String,
     route: RouteBullet,
-    departing_stop: ConnectingStop,
+    departing_stop: Option(ConnectingStop),
     arriving_stop: Option(ConnectingStop),
   )
 }
@@ -35,7 +35,7 @@ pub fn decoder() -> decode.Decoder(ConnectingTrain) {
   use route <- decode.field("route", route_bullet.decoder())
   use departing_stop <- decode.field(
     "departing_stop",
-    connecting_stop_decoder(),
+    decode.optional(connecting_stop_decoder()),
   )
   use arriving_stop <- decode.field(
     "arriving_stop",
@@ -59,7 +59,7 @@ pub fn to_json(connecting_train: ConnectingTrain) -> Json {
     #("trip_id", json.string(rt.trip_id_to_string(trip_id))),
     #("train_url", json.string(train_url)),
     #("route", route_bullet.to_json(route)),
-    #("departing_stop", connecting_stop_to_json(departing_stop)),
+    #("departing_stop", json.nullable(departing_stop, connecting_stop_to_json)),
     #("arriving_stop", json.nullable(arriving_stop, connecting_stop_to_json)),
   ])
 }
@@ -118,35 +118,36 @@ fn li(
     option.None -> False
   }
   use <- bool.guard(when: is_finished, return: Error(Nil))
+  // Ensure that there's no nothing transfers
+  use <- bool.guard(
+    when: option.is_none(departing_stop) && option.is_none(arriving_stop),
+    return: Error(Nil),
+  )
 
   html.li([], [
     html.a([attribute.href(train_url)], [
       route_bullet(route),
       html.span([attribute.class("lines")], [
-        case departing_stop.time |> util.min_from(current_time.timestamp) {
-          dt if dt < 0 -> {
-            // Already departed
-            html.span([], [
-              html.span([attribute.class("description")], [
-                html.text(
-                  "Departed: "
-                  <> result.unwrap(departing_stop.name, "unknown stop"),
-                ),
-              ]),
-            ])
-          }
-          _ -> {
-            // Departing in future
-            html.span([], [
-              html.span([attribute.class("description")], [
-                html.text(
-                  "Departing: "
-                  <> result.unwrap(departing_stop.name, "unknown stop"),
-                ),
-              ]),
-              arrival_time.arrival_time(departing_stop.time, current_time),
-            ])
-          }
+        case departing_stop {
+          option.Some(ConnectingStop(id: _, name:, time:)) ->
+            html.span([], case time |> util.min_from(current_time.timestamp) {
+              dt if dt < 0 -> [
+                // Already departed
+                html.span([attribute.class("description")], [
+                  html.text("Departed: " <> result.unwrap(name, "unknown stop")),
+                ]),
+              ]
+              _ -> [
+                // Departing in future
+                html.span([attribute.class("description")], [
+                  html.text(
+                    "Departing: " <> result.unwrap(name, "unknown stop"),
+                  ),
+                ]),
+                arrival_time.arrival_time(time, current_time),
+              ]
+            })
+          option.None -> element.none()
         },
         case arriving_stop {
           option.Some(ConnectingStop(id: _, name:, time:)) ->
