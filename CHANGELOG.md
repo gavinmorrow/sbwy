@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- The map page now shows an embed of the subway diagram.
+
+### Changed
+
+- On desktop, there is now a maximum width. This prevents the pages from looking
+  very stretched on wide screens.
+
 ## 2026-10-12
 
 ### Added
