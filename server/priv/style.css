@@ -14,6 +14,7 @@
   --nav-padding: 0.5em;
   --nav-height: calc(var(--nav-padding) * 2 + 1lh);
 
+  --margin: 0.5em;
   --max-width: 900px;
 }
 
@@ -21,17 +22,20 @@ a {
   color: lightblue;
 }
 
-html {
-  max-width: var(--max-width);
-  margin: auto;
-}
 html,
 body {
   background-color: var(--color-bg-0);
   color: var(--color-text);
   font-family: system-ui;
   color-scheme: dark;
-  margin-bottom: var(--nav-height);
+}
+html {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+body {
+  margin: var(--margin);
+  margin-bottom: calc(var(--nav-height) + 2 * var(--nav-padding));
 }
 
 h2 {
@@ -129,6 +133,13 @@ h2 {
   & .clear-transfers-form {
     margin: 0.5em 0;
   }
+}
+
+#subway-diagram {
+  width: 100%;
+  min-height: calc(
+    100vh - var(--margin) - var(--nav-height) - 2 * var(--nav-padding)
+  );
 }
 
 .arrival-list,

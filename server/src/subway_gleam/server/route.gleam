@@ -56,7 +56,14 @@ pub fn not_found(req: wisp.Request) -> wisp.Response {
 pub fn map(req: wisp.Request) -> wisp.Response {
   use _req <- lustre_res(req)
 
-  let body = [html.p([], [html.text("Coming soon!")]), navbar()]
+  let body = [
+    html.object([
+      attribute.id("subway-diagram"),
+      attribute.type_("application/pdf"),
+      attribute.attribute("data", "/static/subway-diagram.pdf"),
+    ]),
+    navbar(),
+  ]
   let res = wisp.response(200)
 
   #(Body(body:), res)
