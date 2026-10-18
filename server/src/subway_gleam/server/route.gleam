@@ -57,10 +57,9 @@ pub fn map(req: wisp.Request) -> wisp.Response {
   use _req <- lustre_res(req)
 
   let body = [
-    html.object([
+    html.img([
       attribute.id("subway-diagram"),
-      attribute.type_("application/pdf"),
-      attribute.attribute("data", "/static/subway-diagram.pdf"),
+      attribute.src("/static/subway-diagram.webp"),
     ]),
     navbar(),
   ]

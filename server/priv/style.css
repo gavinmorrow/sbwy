@@ -136,8 +136,8 @@ h2 {
 }
 
 #subway-diagram {
-  width: 100%;
-  min-height: calc(
+  max-width: 100%;
+  max-height: calc(
     100vh - var(--margin) - var(--nav-height) - 2 * var(--nav-padding)
   );
 }
