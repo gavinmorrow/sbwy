@@ -13,12 +13,18 @@
 
   --nav-padding: 0.5em;
   --nav-height: calc(var(--nav-padding) * 2 + 1lh);
+
+  --max-width: 900px;
 }
 
 a {
   color: lightblue;
 }
 
+html {
+  max-width: var(--max-width);
+  margin: auto;
+}
 html,
 body {
   background-color: var(--color-bg-0);
@@ -39,13 +45,16 @@ h2 {
   right: 0;
   z-index: 1000;
 
+  max-width: var(--max-width);
+
   display: flex;
   justify-content: space-around;
   align-items: center;
 
   height: var(--nav-height);
   padding: var(--nav-padding);
-  margin: calc(var(--nav-padding) * 2 / 3);
+  --margin: calc(var(--nav-padding) * 2 / 3);
+  margin: var(--margin) auto;
   border-radius: var(--nav-height);
   box-sizing: border-box;
 
@@ -56,6 +65,12 @@ h2 {
   @supports (backdrop-filter: blur(0)) {
     --bg-alpha: 0.85;
     backdrop-filter: blur(0.5em);
+  }
+}
+@media (max-width: 900px) {
+  #navbar {
+    margin-left: var(--margin);
+    margin-right: var(--margin);
   }
 }
 /* Firefox doesn't support this :[[ */
