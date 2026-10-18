@@ -5,6 +5,8 @@ const STATIC_PATHS = [
   "/",
   "/stops",
   "/stops/",
+  "/map",
+  "/map/",
   "/static/stop.js",
   "/static/stops.js",
   "/static/style.css",
@@ -29,11 +31,14 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
+  // TODO: should this check from STATIC_PATHS?
   const allowsCache =
     url.pathname.startsWith("/static") ||
     url.pathname === "/" ||
     url.pathname === "/stops" ||
-    url.pathname === "/stops/";
+    url.pathname === "/stops/" ||
+    url.pathname === "/map" ||
+    url.pathname === "/map/";
 
   const disallowsCache =
     url.pathname.includes("model_stream") ||
