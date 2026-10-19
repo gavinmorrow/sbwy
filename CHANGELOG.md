@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/).
 
 ## [Unreleased]
 
+## 2026-10-18
+
 ### Added
 
 - The map page now shows an embed of the subway diagram.
