@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>sbwy</title>
+    <meta name="viewport" content="width=device-width" />
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
@@ -10,6 +11,47 @@
     <p><em>subways! yay!</em></p>
     <p>An app showing subway arrival times for New York City.</p>
     <p>To use the app, view <a href="/stops/">stops nearby</a>.</p>
+    <hr />
+    <style>
+      #screenshots-wrapper {
+        background-color: var(--color-bg-1);
+        /* padding: 0.5em; */
+        border-radius: 0.5em;
+
+        border: 0.5em solid var(--color-bg-1);
+
+        display: flex;
+        gap: 0.5em;
+        justify-content: space-between;
+        align-items: center;
+
+        min-width: 0;
+        overflow-x: scroll;
+      }
+      #screenshots-wrapper > img {
+        min-width: 284px;
+        width: 33%;
+        border-radius: 0.25em;
+      }
+    </style>
+    <section id="screenshots">
+      <h2>Screenshots</h2>
+      <div id="screenshots-wrapper">
+        <img
+          src="/static/screenshots/stops.jpg"
+          alt="A screenshot of the stops page, showing favorite stops and stops nearby City Hall."
+        />
+        <img
+          src="/static/screenshots/station.jpg"
+          alt="A screenshot of the trains arriving at 14th-Union Sq."
+        />
+        <img
+          src="/static/screenshots/train.jpg"
+          alt="A screenshot of an Astoria-Ditmars Blvd-bound N train."
+        />
+      </div>
+    </section>
+    <hr />
     <p>
       The source code of this app is available on
       <a href="https://tangled.org/did:plc:tl2btz6plz46c2df422tvhbc">Tangled</a>
