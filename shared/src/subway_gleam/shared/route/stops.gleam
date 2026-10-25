@@ -61,22 +61,30 @@ pub fn view(model: Model) -> element.Element(msg) {
     })
   let stops_nearby = case stops_nearby {
     option.Some(lis) -> keyed.ol([attribute.class("stops-nearby-list")], lis)
-    option.None -> html.p([], [html.text("No stops nearby.")])
+    option.None -> html.p([], [html.em([], [html.text("No stops nearby.")])])
   }
 
   let fav_stops = list.map(fav_stops, with: stop_li)
   let fav_stops = case fav_stops {
-    [] -> html.p([], [html.text("No favorite stops.")])
+    [] -> html.p([], [html.em([], [html.text("No favorite stops.")])])
     lis -> keyed.ol([attribute.class("favorite-stops-list")], lis)
   }
 
-  html.div([], [
-    html.h1([], [html.text("Stops")]),
-    html.h2([], [html.text("Favorites")]),
-    fav_stops,
-    html.h2([], [html.text("Nearby")]),
-    stops_nearby,
-    navbar(),
+  element.fragment([
+    html.div([], [
+      html.h1([], [html.text("Stops")]),
+      html.h2([], [html.text("Favorites")]),
+      fav_stops,
+      html.h2([], [html.text("Nearby")]),
+      stops_nearby,
+      navbar(),
+    ]),
+    html.hr([]),
+    html.p([], [
+      html.text("To learn more about sbwy, visit the "),
+      html.a([attribute.href("/")], [html.text("home page")]),
+      html.text("."),
+    ]),
   ])
 }
 
