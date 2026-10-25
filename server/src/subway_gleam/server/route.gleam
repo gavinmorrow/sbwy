@@ -1,3 +1,5 @@
+import gleam/http/response
+import gleam/option
 import lustre/attribute
 import lustre/element/html
 import wisp
@@ -10,27 +12,13 @@ import subway_gleam/server/route/stops
 import subway_gleam/server/route/train
 import subway_gleam/shared/component/navbar.{navbar}
 
-pub fn index(req: wisp.Request) -> wisp.Response {
-  use _req <- lustre_res(req)
-
-  let body = [
-    html.p([], [html.text("subways! yay!")]),
-    html.p([], [
-      html.a([attribute.href("/stops/")], [html.text("stops nearby")]),
-    ]),
-    html.p([], [
-      html.a(
-        [attribute.href("https://tangled.org/did:plc:tl2btz6plz46c2df422tvhbc")],
-        [
-          html.text("view source on tangled"),
-        ],
-      ),
-    ]),
-    navbar(),
-  ]
-  let res = wisp.response(200)
-
-  #(Body(body:), res)
+pub fn index(_req: wisp.Request) -> wisp.Response {
+  let assert Ok(priv_dir) = wisp.priv_directory("subway_gleam")
+    as "priv_dir should exist"
+  let path = priv_dir <> "/index.html"
+  response.new(200)
+  |> response.set_header("content-type", "text/html; charset=utf-8")
+  |> response.set_body(wisp.File(path:, offset: 0, limit: option.None))
 }
 
 pub fn health(_req: wisp.Request) -> wisp.Response {
