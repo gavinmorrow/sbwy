@@ -23,32 +23,56 @@
         display: flex;
         gap: 0.5em;
         justify-content: space-between;
-        align-items: center;
+        align-items: start;
 
         min-width: 0;
         overflow-x: scroll;
       }
-      #screenshots-wrapper > img {
+      #screenshots-wrapper > figure {
         min-width: 284px;
         width: 33%;
-        border-radius: 0.25em;
+        margin: 0;
+
+        display: flex;
+        flex-direction: column-reverse;
+      }
+      #screenshots-wrapper > figure > img {
+        width: 100%;
+        border: 1px solid lightblue;
+        border-radius: 0.5em;
+        box-sizing: border-box;
+      }
+      #screenshots-wrapper > figure > figcaption {
+        text-align: center;
+        /* font-style: italic; */
+        font-size: small;
+        margin-bottom: 0.5em;
       }
     </style>
     <section id="screenshots">
       <h2>Screenshots</h2>
       <div id="screenshots-wrapper">
-        <img
-          src="/static/screenshots/stops.jpg"
-          alt="A screenshot of the stops page, showing favorite stops and stops nearby City Hall."
-        />
-        <img
-          src="/static/screenshots/station.jpg"
-          alt="A screenshot of the trains arriving at 14th-Union Sq."
-        />
-        <img
-          src="/static/screenshots/train.jpg"
-          alt="A screenshot of an Astoria-Ditmars Blvd-bound N train."
-        />
+        <figure>
+          <img
+            src="/static/screenshots/stops.jpg"
+            alt="A screenshot of the stops page, showing favorite stops and stops nearby City Hall."
+          />
+          <figcaption>The stops page</figcaption>
+        </figure>
+        <figure>
+          <img
+            src="/static/screenshots/station.jpg"
+            alt="A screenshot of the trains arriving at 14 St-Union Sq."
+          />
+          <figcaption>The trains arriving at 14 St-Union Sq</figcaption>
+        </figure>
+        <figure>
+          <img
+            src="/static/screenshots/train.jpg"
+            alt="A screenshot of an Astoria-Ditmars Blvd-bound N train."
+          />
+          <figcaption>An Astoria-Ditmars Blvd-bound N train</figcaption>
+        </figure>
       </div>
     </section>
     <hr />
