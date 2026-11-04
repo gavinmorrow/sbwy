@@ -127,6 +127,7 @@ pub fn from_query_params(
         <> train_url_stop_id
         <> "?"
         <> uri.query_to_string([
+          #("train_id", trip_id |> rt.trip_id_to_string),
           #("connecting_trains", prev_connections),
         ])
 
