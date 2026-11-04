@@ -179,7 +179,7 @@ fn parse_connecting_train(
       let trip_id = rt.TripId(trip_id)
       case string.split(stop_ids, on: "-") {
         [""] | ["", ""] -> Error(Nil)
-        [departing] ->
+        [departing] | [departing, ""] ->
           Ok(#(trip_id, option.Some(st.StopId(departing)), option.None))
         ["", arriving] ->
           Ok(#(trip_id, option.None, option.Some(st.StopId(arriving))))
