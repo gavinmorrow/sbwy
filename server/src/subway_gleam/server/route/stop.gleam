@@ -340,6 +340,11 @@ fn arrival_li(
     })
   }
 
+  let is_last_connection = case list.last(connecting_trains) {
+    Ok(connecting_train.ConnectingTrain(trip_id:, ..)) -> trip_id == trip.id
+    _ -> False
+  }
+
   let query =
     uri.query_to_string(
       [
@@ -347,16 +352,21 @@ fn arrival_li(
           "stop_id",
           st.stop_id_to_string(stop_id, option.Some(direction)) |> Ok,
         ),
-        #(
-          "connecting_trains",
-          connecting_trains.append_to_string(
-            to: connecting_trains,
-            trip_id: trip.id,
-            departing: option.Some(stop_id),
-            arriving: option.None,
-          )
-            |> Ok,
-        ),
+        #("connecting_trains", case is_last_connection {
+          True ->
+            case list.reverse(connecting_trains) {
+              [] -> Error(Nil)
+              [_this_stop, ..rest] -> rest |> connecting_trains.to_string
+            }
+          False ->
+            connecting_trains.append_to_string(
+              to: connecting_trains,
+              trip_id: trip.id,
+              departing: option.Some(stop_id),
+              arriving: option.None,
+            )
+            |> Ok
+        }),
       ]
       |> list.filter_map(fn(query) {
         case query {
