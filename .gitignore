@@ -15,6 +15,7 @@ erl_crash.dump
 server/priv/stop.js
 server/priv/stops.js
 server/priv/train.js
+server/priv/trip.js
 
 # Temporary
 gtfs_subway.zip
