@@ -9,6 +9,7 @@ import gleam/uri
 import lustre/attribute
 import lustre/element/html
 import subway_gleam/server/connecting_trains
+import subway_gleam/shared/component/connecting_train
 import wisp
 
 import subway_gleam/gtfs/rt
@@ -67,7 +68,6 @@ pub fn model(
     |> result.try(st.parse_stop_id)
     |> result.map(pair.first)
     |> option.from_result
-  let connecting_trains_raw = query |> list.key_find("connecting_trains")
   let connecting_trains = connecting_trains.from_query_params(query, state)
 
   let data = state.fetch_gtfs(state)
@@ -114,7 +114,7 @@ pub fn model(
         arrival.time,
         trip_id,
         state.schedule,
-        connecting_trains_raw,
+        connecting_trains,
       ))
     })
 
@@ -162,7 +162,7 @@ fn stop_li(
   time: timestamp.Timestamp,
   trip_id: rt.TripId,
   schedule: st.Schedule,
-  connecting_trains: Result(String, Nil),
+  connecting_trains: List(connecting_train.ConnectingTrain),
 ) -> train.Stop {
   let stop_url = {
     let stop_id = stop.id |> st.stop_id_to_string(direction: option.None)
@@ -171,11 +171,14 @@ fn stop_li(
     let query = {
       uri.query_to_string([
         #("train_id", train_id),
-        // TODO: bad string manipulation :[
-        #("connecting_trains", case connecting_trains {
-          Ok(connections) -> connections <> "-" <> stop_id
-          Error(Nil) -> train_id <> ":-" <> stop_id
-        }),
+        #(
+          "connecting_trains",
+          connecting_trains.append_arriving_stop_to_string(
+            to: connecting_trains,
+            trip_id:,
+            arriving_stop_id: stop.id,
+          ),
+        ),
       ])
     }
     "/stop/" <> stop_id <> "?" <> query

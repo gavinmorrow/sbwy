@@ -29,16 +29,16 @@ pub fn to_string(
 
 fn connecting_train_to_string(connection: ConnectingTrain) -> String {
   connecting_train_parts_to_string(
-    connection.trip_id,
-    connection.departing_stop |> option.map(fn(s) { s.id }),
-    connection.arriving_stop |> option.map(fn(s) { s.id }),
+    trip_id: connection.trip_id,
+    departing: connection.departing_stop |> option.map(fn(s) { s.id }),
+    arriving: connection.arriving_stop |> option.map(fn(s) { s.id }),
   )
 }
 
 fn connecting_train_parts_to_string(
-  trip_id: rt.TripId,
-  departing_stop: Option(st.StopId),
-  arriving_stop: Option(st.StopId),
+  trip_id trip_id: rt.TripId,
+  departing departing_stop: Option(st.StopId),
+  arriving arriving_stop: Option(st.StopId),
 ) -> String {
   let trip_id = rt.trip_id_to_string(trip_id)
   let departing_id = case departing_stop {
@@ -55,14 +55,50 @@ fn connecting_train_parts_to_string(
 pub fn append_to_string(
   to connecting_trains: List(ConnectingTrain),
   trip_id trip_id: rt.TripId,
-  stop_id stop_id: st.StopId,
+  departing departing_stop_id: option.Option(st.StopId),
+  arriving arriving_stop_id: option.Option(st.StopId),
 ) -> String {
-  let st.StopId(stop_id) = stop_id
-  let connection = rt.trip_id_to_string(trip_id) <> ":" <> stop_id
+  let connection =
+    connecting_train_parts_to_string(
+      trip_id:,
+      departing: departing_stop_id,
+      arriving: arriving_stop_id,
+    )
 
   case connecting_trains |> to_string {
     Error(Nil) -> connection
     Ok(connections) -> connections <> ";" <> connection
+  }
+}
+
+pub fn append_arriving_stop_to_string(
+  to connecting_trains: List(ConnectingTrain),
+  trip_id trip_id: rt.TripId,
+  arriving_stop_id arriving_stop_id: st.StopId,
+) -> String {
+  let reversed = list.reverse(connecting_trains)
+  case reversed {
+    [] ->
+      connecting_train_parts_to_string(
+        trip_id:,
+        departing: option.None,
+        arriving: option.Some(arriving_stop_id),
+      )
+    [connection, ..reversed] if connection.trip_id == trip_id -> {
+      list.reverse(reversed)
+      |> append_to_string(
+        trip_id:,
+        departing: connection.departing_stop |> option.map(fn(stop) { stop.id }),
+        arriving: option.Some(arriving_stop_id),
+      )
+    }
+    _ ->
+      list.reverse(connecting_trains)
+      |> append_to_string(
+        trip_id:,
+        departing: option.None,
+        arriving: option.Some(arriving_stop_id),
+      )
   }
 }
 

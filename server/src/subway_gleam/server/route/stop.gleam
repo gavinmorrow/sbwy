@@ -352,7 +352,8 @@ fn arrival_li(
           connecting_trains.append_to_string(
             to: connecting_trains,
             trip_id: trip.id,
-            stop_id:,
+            departing: option.Some(stop_id),
+            arriving: option.None,
           )
             |> Ok,
         ),
