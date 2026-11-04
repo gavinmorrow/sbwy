@@ -356,8 +356,27 @@ fn arrival_li(
           True ->
             case list.reverse(connecting_trains) {
               [] -> Error(Nil)
-              [_this_stop, ..rest] -> rest |> connecting_trains.to_string
+              [
+                ConnectingTrain(
+                  trip_id:,
+                  departing_stop:,
+                  arriving_stop: option.Some(arriving_stop),
+                  ..,
+                ),
+                ..rest
+              ]
+                if arriving_stop.id == stop_id
+              ->
+                connecting_trains.append_to_string(
+                  to: rest,
+                  trip_id: trip_id,
+                  departing: departing_stop |> option.map(fn(stop) { stop.id }),
+                  arriving: option.None,
+                )
+                |> Ok
+              _ -> connecting_trains |> connecting_trains.to_string
             }
+
           False ->
             connecting_trains.append_to_string(
               to: connecting_trains,
