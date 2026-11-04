@@ -32,12 +32,14 @@ import subway_gleam/server/normalize_path_trailing_slash.{
 import subway_gleam/server/route
 import subway_gleam/server/route/stop
 import subway_gleam/server/route/train
+import subway_gleam/server/route/trip
 import subway_gleam/server/sse_gtfs.{sse_gtfs}
 import subway_gleam/server/st_extra
 import subway_gleam/server/state
 import subway_gleam/server/state/gtfs_store
 import subway_gleam/shared/route/stop as shared_stop
 import subway_gleam/shared/route/train as shared_train
+import subway_gleam/shared/route/trip as shared_trip
 
 pub fn main() -> Nil {
   // The application is already running by the time this is called, so all main
@@ -187,6 +189,11 @@ fn ewe_handler(
         train.model(state, train_id, req.query)
         |> result.map(shared_train.model_to_json)
       })
+    ["trip", trip_str, "model_stream"] ->
+      sse_gtfs(req, state_ref, fn() {
+        trip.model(state, trip_str)
+        |> result.map(shared_trip.model_to_json)
+      })
     // I don't love the hard coded path but c'est la vie
     ["static", "service-worker.js"] ->
       wisp_handler(req)
@@ -247,6 +254,7 @@ fn handler(state: state.Ref, req: wisp.Request) -> wisp.Response {
           eflame.profile("train", fn() { route.train(req, state, trip_id) })
         False -> route.train(req, state, trip_id)
       }
+    ["trip", connecting_trains] -> route.trip(req, state, connecting_trains)
     ["line", route_id] -> route.line(req, state, route_id)
     _ -> route.not_found(req)
   }

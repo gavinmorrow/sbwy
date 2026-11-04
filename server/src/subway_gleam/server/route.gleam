@@ -10,6 +10,7 @@ import subway_gleam/server/route/stop
 import subway_gleam/server/route/stop/alerts
 import subway_gleam/server/route/stops
 import subway_gleam/server/route/train
+import subway_gleam/server/route/trip
 import subway_gleam/shared/component/navbar.{navbar}
 
 pub fn index(_req: wisp.Request) -> wisp.Response {
@@ -63,5 +64,7 @@ pub const stop = stop.stop
 pub const stop_alerts = alerts.alerts
 
 pub const train = train.train
+
+pub const trip = trip.trip
 
 pub const line = line.line

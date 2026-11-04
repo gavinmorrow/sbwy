@@ -4,6 +4,7 @@ import gleam/json.{type Json}
 import gleam/list
 import gleam/option.{type Option}
 import gleam/result
+import gleam/string
 import gleam/time/timestamp.{type Timestamp}
 import lustre/attribute
 import lustre/element.{type Element}
@@ -87,6 +88,35 @@ fn connecting_stop_to_json(connecting_stop: ConnectingStop) -> Json {
   ])
 }
 
+fn list_to_string(connecting_trains: List(ConnectingTrain)) -> String {
+  connecting_trains |> list.map(to_string) |> string.join(with: ";")
+}
+
+pub fn to_string(connection: ConnectingTrain) -> String {
+  parts_to_string(
+    trip_id: connection.trip_id,
+    departing: connection.departing_stop |> option.map(fn(s) { s.id }),
+    arriving: connection.arriving_stop |> option.map(fn(s) { s.id }),
+  )
+}
+
+pub fn parts_to_string(
+  trip_id trip_id: rt.TripId,
+  departing departing_stop: Option(st.StopId),
+  arriving arriving_stop: Option(st.StopId),
+) -> String {
+  let trip_id = rt.trip_id_to_string(trip_id)
+  let departing_id = case departing_stop {
+    option.Some(st.StopId(id)) -> id
+    option.None -> ""
+  }
+  let arriving_id = case arriving_stop {
+    option.Some(st.StopId(id)) -> id
+    option.None -> ""
+  }
+  trip_id <> ":" <> departing_id <> "-" <> arriving_id
+}
+
 pub fn list(
   connecting_trains: List(ConnectingTrain),
   current_time: Time,
@@ -104,6 +134,10 @@ pub fn list(
             attribute.method("get"),
           ],
           [
+            html.a(
+              [attribute.href("/trip/" <> list_to_string(connecting_trains))],
+              [html.text("Expand")],
+            ),
             html.button([], [html.text("Clear transfers")]),
           ],
         ),

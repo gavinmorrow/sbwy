@@ -16,7 +16,7 @@ server cmd="check":
 client cmd="check":
     gleam {{cmd}}
 
-build-pages: (build-page "stops") (build-page "stop") (build-page "train")
+build-pages: (build-page "stops") (build-page "stop") (build-page "train") (build-page "trip")
 
 [working-directory: 'client']
 build-page name:

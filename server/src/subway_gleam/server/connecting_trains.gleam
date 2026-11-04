@@ -21,35 +21,10 @@ pub fn to_string(
   case connecting_trains {
     [] -> Error(Nil)
     _ ->
-      list.map(connecting_trains, connecting_train_to_string)
+      list.map(connecting_trains, connecting_train.to_string)
       |> string.join(";")
       |> Ok
   }
-}
-
-fn connecting_train_to_string(connection: ConnectingTrain) -> String {
-  connecting_train_parts_to_string(
-    trip_id: connection.trip_id,
-    departing: connection.departing_stop |> option.map(fn(s) { s.id }),
-    arriving: connection.arriving_stop |> option.map(fn(s) { s.id }),
-  )
-}
-
-fn connecting_train_parts_to_string(
-  trip_id trip_id: rt.TripId,
-  departing departing_stop: Option(st.StopId),
-  arriving arriving_stop: Option(st.StopId),
-) -> String {
-  let trip_id = rt.trip_id_to_string(trip_id)
-  let departing_id = case departing_stop {
-    option.Some(st.StopId(id)) -> id
-    option.None -> ""
-  }
-  let arriving_id = case arriving_stop {
-    option.Some(st.StopId(id)) -> id
-    option.None -> ""
-  }
-  trip_id <> ":" <> departing_id <> "-" <> arriving_id
 }
 
 pub fn append_to_string(
@@ -59,7 +34,7 @@ pub fn append_to_string(
   arriving arriving_stop_id: option.Option(st.StopId),
 ) -> String {
   let connection =
-    connecting_train_parts_to_string(
+    connecting_train.parts_to_string(
       trip_id:,
       departing: departing_stop_id,
       arriving: arriving_stop_id,
@@ -79,7 +54,7 @@ pub fn append_arriving_stop_to_string(
   let reversed = list.reverse(connecting_trains)
   case reversed {
     [] ->
-      connecting_train_parts_to_string(
+      connecting_train.parts_to_string(
         trip_id:,
         departing: option.None,
         arriving: option.Some(arriving_stop_id),
@@ -106,12 +81,18 @@ pub fn from_query_params(
   query: List(#(String, String)),
   state: state.State,
 ) -> List(ConnectingTrain) {
-  let connecting_trains_raw =
-    query
-    |> list.key_find("connecting_trains")
+  case list.key_find(query, "connecting_trains") {
+    Ok(connecting_trains_raw) -> from_str(connecting_trains_raw, state)
+    Error(Nil) -> []
+  }
+}
+
+pub fn from_str(
+  connecting_trains_raw: String,
+  state: state.State,
+) -> List(ConnectingTrain) {
   let #(_, connecting_trains) =
-    connecting_trains_raw
-    |> result.try(parse_connecting_trains)
+    parse_connecting_trains(connecting_trains_raw)
     |> result.unwrap(or: [])
     |> list.map_fold("", fn(prev_connections, connection) {
       let #(trip_id, departing_stop_id, arriving_stop_id) = connection
@@ -158,7 +139,7 @@ pub fn from_query_params(
 
       case connection {
         Ok(connection) -> {
-          let connection_str = connecting_train_to_string(connection)
+          let connection_str = connecting_train.to_string(connection)
           let connections = case prev_connections {
             "" -> connection_str
             _ -> prev_connections <> ";" <> connection_str
