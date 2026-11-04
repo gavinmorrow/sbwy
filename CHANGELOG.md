@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/2.0.0/).
 
 ## [Unreleased]
 
+## 2026-11-03
+
+### Fixed
+
+- Multiple bugs have been fixed concerning the transfers feature, and it has
+  overall been polished a bit.
+
 ## 2026-10-18
 
 ### Added
