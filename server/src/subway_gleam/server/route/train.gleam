@@ -104,19 +104,7 @@ pub fn model(
     }
     |> result.unwrap(or: "")
 
-  let stops =
-    list.filter_map(stops, fn(arrival) {
-      // If the stop doesn't exist in the stops.txt, it's an internal timepoint
-      // and can be ignored.
-      // See <https://groups.google.com/g/mtadeveloperresources/c/fdlP92IKmF8>
-      result.map(dict.get(state.schedule.stops, arrival.stop_id), stop_li(
-        _,
-        arrival.time,
-        trip_id,
-        state.schedule,
-        connecting_trains,
-      ))
-    })
+  let stops = stop_lis(stops, state, trip_id, connecting_trains)
 
   let cur_time = time_zone.now(state.tz_db)
   let last_updated =
@@ -157,29 +145,102 @@ fn error_could_not_find_train(
   )
 }
 
+fn stop_lis(
+  stops: List(rt.TrainStopping),
+  state: state.State,
+  trip_id: rt.TripId,
+  connecting_trains: List(connecting_train.ConnectingTrain),
+) -> List(train.Stop) {
+  stop_lis_loop(
+    [],
+    list.reverse(stops),
+    False,
+    state,
+    trip_id,
+    connecting_trains,
+  )
+}
+
+fn stop_lis_loop(
+  acc_lis: List(train.Stop),
+  stops: List(rt.TrainStopping),
+  before_connection: Bool,
+  state: state.State,
+  trip_id: rt.TripId,
+  connecting_trains: List(connecting_train.ConnectingTrain),
+) -> List(train.Stop) {
+  case stops {
+    [] -> acc_lis
+    [arrival, ..stops] -> {
+      let matches_connection = case list.last(connecting_trains) {
+        Ok(connecting_train.ConnectingTrain(
+          departing_stop: option.Some(connecting_train.ConnectingStop(id:, ..)),
+          ..,
+        )) -> id == arrival.stop_id
+        _ -> False
+      }
+
+      let acc_lis = case dict.get(state.schedule.stops, arrival.stop_id) {
+        Ok(stop) -> [
+          stop_li(
+            stop,
+            arrival.time,
+            trip_id,
+            state.schedule,
+            connecting_trains,
+            before_connection,
+          ),
+          ..acc_lis
+        ]
+        Error(Nil) -> {
+          // If the stop doesn't exist in the stops.txt, it's an internal timepoint
+          // and can be ignored.
+          // See <https://groups.google.com/g/mtadeveloperresources/c/fdlP92IKmF8>
+          acc_lis
+        }
+      }
+
+      stop_lis_loop(
+        acc_lis,
+        stops,
+        // If already before the connection, it will always continue to be
+        // before (we're iterating in reverse).
+        // If matching, then it starts being before the connection.
+        before_connection || matches_connection,
+        state,
+        trip_id,
+        connecting_trains,
+      )
+    }
+  }
+}
+
 fn stop_li(
   stop: st.Stop,
   time: timestamp.Timestamp,
   trip_id: rt.TripId,
   schedule: st.Schedule,
   connecting_trains: List(connecting_train.ConnectingTrain),
+  before_connection: Bool,
 ) -> train.Stop {
   let stop_url = {
     let stop_id = stop.id |> st.stop_id_to_string(direction: option.None)
     let train_id = rt.trip_id_to_string(trip_id)
 
     let query = {
-      uri.query_to_string([
-        #("train_id", train_id),
-        #(
-          "connecting_trains",
-          connecting_trains.append_arriving_stop_to_string(
-            to: connecting_trains,
-            trip_id:,
-            arriving_stop_id: stop.id,
-          ),
+      let train = #("train_id", train_id)
+      let connections = #(
+        "connecting_trains",
+        connecting_trains.append_arriving_stop_to_string(
+          to: connecting_trains,
+          trip_id:,
+          arriving_stop_id: stop.id,
         ),
-      ])
+      )
+      case before_connection {
+        True -> uri.query_to_string([train])
+        False -> uri.query_to_string([train, connections])
+      }
     }
     "/stop/" <> stop_id <> "?" <> query
   }
@@ -195,5 +256,12 @@ fn stop_li(
     |> list.sort(by: st.route_compare)
     |> list.map(route_bullet.from_route_data)
 
-  train.Stop(id: stop.id, name: stop.name, stop_url:, transfers:, time:)
+  train.Stop(
+    id: stop.id,
+    name: stop.name,
+    stop_url:,
+    transfers:,
+    time:,
+    dimmed: before_connection,
+  )
 }

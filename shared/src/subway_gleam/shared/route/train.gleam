@@ -134,6 +134,7 @@ pub type Stop {
     stop_url: String,
     transfers: List(RouteBullet),
     time: timestamp.Timestamp,
+    dimmed: Bool,
   )
 }
 
@@ -146,12 +147,13 @@ fn stop_decoder() -> decode.Decoder(Stop) {
     decode.list(route_bullet.decoder()),
   )
   use time <- decode.field("time", timestamp_json.decoder())
+  use dimmed <- decode.field("dimmed", decode.bool)
 
-  decode.success(Stop(id:, name:, stop_url:, transfers:, time:))
+  decode.success(Stop(id:, name:, stop_url:, transfers:, time:, dimmed:))
 }
 
 fn stop_to_json(stop: Stop) -> json.Json {
-  let Stop(id:, name:, stop_url:, transfers:, time:) = stop
+  let Stop(id:, name:, stop_url:, transfers:, time:, dimmed:) = stop
   let st.StopId(id) = id
 
   json.object([
@@ -160,6 +162,7 @@ fn stop_to_json(stop: Stop) -> json.Json {
     #("stop_url", json.string(stop_url)),
     #("transfers", json.array(transfers, route_bullet.to_json)),
     #("time", timestamp_json.to_json(time)),
+    #("dimmed", json.bool(dimmed)),
   ])
 }
 
@@ -168,7 +171,7 @@ pub fn stop_li(
   highlighted_stop: option.Option(st.StopId),
   cur_time: Time,
 ) -> Result(#(String, Element(msg)), Nil) {
-  let Stop(id:, name:, stop_url:, transfers:, time:) = stop
+  let Stop(id:, name:, stop_url:, transfers:, time:, dimmed:) = stop
 
   let dt = util.min_from(time, epoch: cur_time.timestamp)
   use <- bool.guard(when: dt < 0, return: Error(Nil))
@@ -183,7 +186,10 @@ pub fn stop_li(
       html.a(
         [
           attribute.href(stop_url),
-          attribute.classes([#("highlight", is_highlighted)]),
+          attribute.classes([
+            #("highlight", is_highlighted),
+            #("dimmed", dimmed),
+          ]),
         ],
         [
           html.span([attribute.class("name")], [
