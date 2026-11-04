@@ -223,24 +223,41 @@ fn stop_li(
   connecting_trains: List(connecting_train.ConnectingTrain),
   before_connection: Bool,
 ) -> train.Stop {
+  let is_last_connection = case list.last(connecting_trains) {
+    Ok(connecting_train.ConnectingTrain(
+      departing_stop: option.Some(connecting_train.ConnectingStop(id:, ..)),
+      ..,
+    )) -> id == stop.id
+    _ -> False
+  }
+
   let stop_url = {
     let stop_id = stop.id |> st.stop_id_to_string(direction: option.None)
     let train_id = rt.trip_id_to_string(trip_id)
 
     let query = {
       let train = #("train_id", train_id)
-      let connections = #(
-        "connecting_trains",
-        connecting_trains.append_arriving_stop_to_string(
-          to: connecting_trains,
-          trip_id:,
-          arriving_stop_id: stop.id,
-        ),
-      )
-      case before_connection {
-        True -> uri.query_to_string([train])
-        False -> uri.query_to_string([train, connections])
-      }
+      let connections = #("connecting_trains", case is_last_connection {
+        True -> {
+          // TODO: are these empty strings correct
+          case list.reverse(connecting_trains) {
+            [] -> ""
+            [_this_stop, ..rest] ->
+              rest |> connecting_trains.to_string |> result.unwrap(or: "")
+          }
+        }
+        False ->
+          connecting_trains.append_arriving_stop_to_string(
+            to: case before_connection {
+              True -> []
+              False -> connecting_trains
+            },
+            trip_id:,
+            arriving_stop_id: stop.id,
+          )
+      })
+
+      uri.query_to_string([train, connections])
     }
     "/stop/" <> stop_id <> "?" <> query
   }
