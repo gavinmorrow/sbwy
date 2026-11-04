@@ -84,23 +84,14 @@ pub fn from_query_params(
       // TODO: should this go to a stop page or a train page? + which stop page?
       // FIXME: get rid of assert
       let assert option.Some(st.StopId(train_url_stop_id)) =
-        arriving_stop_id |> option.or(departing_stop_id)
+        departing_stop_id |> option.or(arriving_stop_id)
         as "either arriving or departing should be set"
-      let current_connection_str =
-        connecting_train_parts_to_string(
-          trip_id,
-          departing_stop_id,
-          arriving_stop_id,
-        )
       let train_url =
         "/stop/"
         <> train_url_stop_id
         <> "?"
         <> uri.query_to_string([
-          #("connecting_trains", case prev_connections {
-            "" -> current_connection_str
-            _ -> prev_connections <> ";" <> current_connection_str
-          }),
+          #("connecting_trains", prev_connections),
         ])
 
       let connection = {
