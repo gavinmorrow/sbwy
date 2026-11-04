@@ -340,21 +340,20 @@ fn arrival_li(
     })
   }
 
-  let query = {
-    let st.StopId(stop_id_raw) = stop_id
-    // TODO: bad string manipulation :[
-    let connection = rt.trip_id_to_string(trip.id) <> ":" <> stop_id_raw
-
+  let query =
     uri.query_to_string(
       [
         #(
           "stop_id",
           st.stop_id_to_string(stop_id, option.Some(direction)) |> Ok,
         ),
-        // TODO: bad string manipulation :[
         #(
           "connecting_trains",
-          connecting_trains.append_to_string(connection:, to: connecting_trains)
+          connecting_trains.append_to_string(
+            to: connecting_trains,
+            trip_id: trip.id,
+            stop_id:,
+          )
             |> Ok,
         ),
       ]
@@ -365,7 +364,6 @@ fn arrival_li(
         }
       }),
     )
-  }
   let train_url = "/train/" <> rt.trip_id_to_string(trip.id) <> "/?" <> query
 
   // TODO: use default route bullet instead of panicking

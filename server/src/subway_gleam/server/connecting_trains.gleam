@@ -54,8 +54,12 @@ fn connecting_train_parts_to_string(
 
 pub fn append_to_string(
   to connecting_trains: List(ConnectingTrain),
-  connection connection: String,
+  trip_id trip_id: rt.TripId,
+  stop_id stop_id: st.StopId,
 ) -> String {
+  let st.StopId(stop_id) = stop_id
+  let connection = rt.trip_id_to_string(trip_id) <> ":" <> stop_id
+
   case connecting_trains |> to_string {
     Error(Nil) -> connection
     Ok(connections) -> connections <> ";" <> connection
