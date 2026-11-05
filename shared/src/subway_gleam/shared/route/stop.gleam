@@ -1,10 +1,7 @@
-import gleam/bool
 import gleam/dynamic/decode
 import gleam/json
 import gleam/list
 import gleam/option
-import gleam/result
-import gleam/time/timestamp
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -13,7 +10,7 @@ import lustre/event
 
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
-import subway_gleam/shared/component/arrival_time.{arrival_time}
+import subway_gleam/shared/component/arrival.{type Arrival}
 import subway_gleam/shared/component/connecting_train.{type ConnectingTrain}
 import subway_gleam/shared/component/last_updated
 import subway_gleam/shared/component/navbar.{navbar}
@@ -21,10 +18,8 @@ import subway_gleam/shared/component/route_bullet.{
   type RouteBullet, route_bullet,
 }
 import subway_gleam/shared/route/stops
-import subway_gleam/shared/util
 import subway_gleam/shared/util/live_status.{type LiveStatus}
 import subway_gleam/shared/util/time.{type Time}
-import subway_gleam/shared/util/timestamp_json
 
 pub type Model {
   Model(
@@ -86,13 +81,13 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
     })
 
   let uptown =
-    list.filter_map(uptown, arrival_li(
+    list.filter_map(uptown, arrival.li(
       for: _,
       highlighting: highlighted_train,
       at: cur_time,
     ))
   let downtown =
-    list.filter_map(downtown, arrival_li(
+    list.filter_map(downtown, arrival.li(
       for: _,
       highlighting: highlighted_train,
       at: cur_time,
@@ -167,8 +162,8 @@ pub fn model_decoder() -> decode.Decoder(Model) {
     "connecting_trains",
     decode.list(of: connecting_train.decoder()),
   )
-  use uptown <- decode.field("uptown", decode.list(arrival_decoder()))
-  use downtown <- decode.field("downtown", decode.list(arrival_decoder()))
+  use uptown <- decode.field("uptown", decode.list(arrival.decoder()))
+  use downtown <- decode.field("downtown", decode.list(arrival.decoder()))
   use north_direction_label <- decode.field(
     "north_direction_label",
     decode.string,
@@ -238,8 +233,8 @@ pub fn model_to_json(model: Model) -> json.Json {
       "connecting_trains",
       json.array(connecting_trains, of: connecting_train.to_json),
     ),
-    #("uptown", json.array(uptown, arrival_to_json)),
-    #("downtown", json.array(downtown, arrival_to_json)),
+    #("uptown", json.array(uptown, arrival.to_json)),
+    #("downtown", json.array(downtown, arrival.to_json)),
     #("north_direction_label", json.string(north_direction_label)),
     #("south_direction_label", json.string(south_direction_label)),
     #("cur_time", time.to_json(cur_time)),
@@ -270,114 +265,4 @@ fn transfer_to_json(transfer: Transfer) -> json.Json {
     #("routes", json.array(routes, route_bullet.to_json)),
     #("highlighted", json.bool(highlighted)),
   ])
-}
-
-pub type Arrival {
-  Arrival(
-    train_id: rt.TripId,
-    train_url: String,
-    route: RouteBullet,
-    headsign: Result(String, Nil),
-    time: timestamp.Timestamp,
-    dimmed: Bool,
-  )
-}
-
-fn arrival_decoder() -> decode.Decoder(Arrival) {
-  use train_id <- decode.field(
-    "train_id",
-    decode.string |> decode.map(rt.TripId),
-  )
-  use train_url <- decode.field("train_url", decode.string)
-  use route <- decode.field("route", route_bullet.decoder())
-  use headsign <- decode.field(
-    "headsign",
-    decode.optional(decode.string) |> decode.map(option.to_result(_, Nil)),
-  )
-  use time <- decode.field("time", timestamp_json.decoder())
-  use dimmed <- decode.field("dimmed", decode.bool)
-
-  decode.success(Arrival(
-    train_id:,
-    train_url:,
-    route:,
-    headsign:,
-    time:,
-    dimmed:,
-  ))
-}
-
-fn arrival_to_json(arrival: Arrival) -> json.Json {
-  let Arrival(train_id:, train_url:, route:, headsign:, time:, dimmed:) =
-    arrival
-
-  json.object([
-    #("train_id", json.string(rt.trip_id_to_string(train_id))),
-    #("train_url", json.string(train_url)),
-    #("route", route_bullet.to_json(route)),
-    #("headsign", json.nullable(option.from_result(headsign), of: json.string)),
-    #("time", timestamp_json.to_json(time)),
-    #("dimmed", json.bool(dimmed)),
-  ])
-}
-
-fn arrival_li(
-  for arrival: Arrival,
-  highlighting highlighted_train: option.Option(rt.TripId),
-  at cur_time: Time,
-) -> Result(#(String, Element(msg)), Nil) {
-  let Arrival(train_id:, train_url:, route:, headsign:, time:, dimmed:) =
-    arrival
-
-  // Filter to not show departed trains
-  let dt = time |> util.min_from(cur_time.timestamp)
-  use <- bool.guard(when: dt < 0, return: Error(Nil))
-
-  let headsign =
-    result.map(headsign, fn(headsign) {
-      html.span([attribute.class("headsign")], [html.text(headsign)])
-    })
-
-  let is_highlighted = option.Some(train_id) == highlighted_train
-
-  #(
-    rt.trip_id_to_string(arrival.train_id),
-    html.li([], [
-      html.a(
-        [
-          attribute.href(train_url),
-          attribute.classes([
-            #("highlight", is_highlighted),
-            #("dimmed", dimmed),
-          ]),
-        ],
-        [
-          route_bullet(route),
-          html.div([], [
-            headsign |> result.unwrap(or: element.none()),
-            html.div(
-              [
-                attribute.classes([
-                  #(
-                    "arriving-now",
-                    time |> util.min_from(cur_time.timestamp) < 1,
-                  ),
-                  #(
-                    "arriving-very-soon",
-                    time |> util.min_from(cur_time.timestamp) <= 5,
-                  ),
-                  #(
-                    "arriving-soon",
-                    time |> util.min_from(cur_time.timestamp) <= 10,
-                  ),
-                ]),
-              ],
-              [arrival_time(arriving_at: time, cur_time:)],
-            ),
-          ]),
-        ],
-      ),
-    ]),
-  )
-  |> Ok
 }

@@ -23,6 +23,7 @@ import subway_gleam/server/lustre_middleware.{Document, try_lustre_res}
 import subway_gleam/server/state
 import subway_gleam/server/state/gtfs_store
 import subway_gleam/server/time_zone
+import subway_gleam/shared/component/arrival.{type Arrival, Arrival}
 import subway_gleam/shared/component/connecting_train.{
   type ConnectingTrain, ConnectingTrain,
 }
@@ -214,7 +215,7 @@ fn arrivals(
   stop_id: st.StopId,
   schedule: st.Schedule,
   connecting_trains: List(ConnectingTrain),
-) -> #(List(stop.Arrival), List(stop.Arrival)) {
+) -> #(List(Arrival), List(Arrival)) {
   gtfs_store.arrivals(data, for: stop_id)
   |> result.unwrap(or: [])
   |> list.sort(by: fn(a, b) {
@@ -323,7 +324,7 @@ fn arrival_li(
   schedule: st.Schedule,
   get_final_stop: fn(st.ShapeId) -> Result(st.StopId, Nil),
   connecting_trains: List(ConnectingTrain),
-) -> stop.Arrival {
+) -> Arrival {
   let #(trip, rt.TrainStopping(time:, stop_id:, direction:)) = update
 
   let headsign = {
@@ -412,5 +413,5 @@ fn arrival_li(
     _ -> False
   }
 
-  stop.Arrival(train_id: trip.id, train_url:, route:, headsign:, time:, dimmed:)
+  Arrival(train_id: trip.id, train_url:, route:, headsign:, time:, dimmed:)
 }
