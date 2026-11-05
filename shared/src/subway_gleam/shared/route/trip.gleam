@@ -1,24 +1,26 @@
 import gleam/bool
 import gleam/dynamic/decode
+import gleam/float
 import gleam/json
 import gleam/list
-import gleam/option
-import gleam/result
+import gleam/option.{type Option}
+import gleam/time/timestamp.{type Timestamp}
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
-import subway_gleam/shared/util
 
-import subway_gleam/shared/component/arrival_time
-import subway_gleam/shared/component/connecting_train.{ConnectingStop}
+import subway_gleam/gtfs/rt
+import subway_gleam/gtfs/st
 import subway_gleam/shared/component/last_updated
-import subway_gleam/shared/component/route_bullet.{route_bullet}
+import subway_gleam/shared/component/route_bullet.{
+  type RouteBullet, route_bullet,
+}
 import subway_gleam/shared/util/live_status.{type LiveStatus}
 import subway_gleam/shared/util/time.{type Time}
 
 pub type Model {
   Model(
-    connections: List(connecting_train.ConnectingTrain),
+    connections: List(Connection),
     last_updated: Time,
     current_time: Time,
     event_source: LiveStatus,
@@ -28,7 +30,7 @@ pub type Model {
 pub fn model_decoder() -> decode.Decoder(Model) {
   use connections <- decode.field(
     "connections",
-    decode.list(of: connecting_train.decoder()),
+    decode.list(of: connection_decoder()),
   )
   use last_updated <- decode.field("last_updated", time.decoder())
   use current_time <- decode.field("current_time", time.decoder())
@@ -45,9 +47,89 @@ pub fn model_decoder() -> decode.Decoder(Model) {
 pub fn model_to_json(model: Model) -> json.Json {
   let Model(connections:, last_updated:, current_time:, event_source: _) = model
   json.object([
-    #("connections", json.array(connections, of: connecting_train.to_json)),
+    #("connections", json.array(connections, of: connection_to_json)),
     #("last_updated", time.to_json(last_updated)),
     #("current_time", time.to_json(current_time)),
+  ])
+}
+
+pub type Connection {
+  Connection(
+    train: Train,
+    departing_stop: Option(Stop),
+    arriving_stop: Option(Stop),
+  )
+}
+
+fn connection_decoder() -> decode.Decoder(Connection) {
+  use train <- decode.field("train", train_decoder())
+  use departing_stop <- decode.field(
+    "departing_stop",
+    decode.optional(stop_decoder()),
+  )
+  use arriving_stop <- decode.field(
+    "arriving_stop",
+    decode.optional(stop_decoder()),
+  )
+  Connection(train:, departing_stop:, arriving_stop:) |> decode.success
+}
+
+fn connection_to_json(connection: Connection) -> json.Json {
+  let Connection(train:, departing_stop:, arriving_stop:) = connection
+  json.object([
+    #("train", train_to_json(train)),
+    #("departing_stop", json.nullable(departing_stop, stop_to_json)),
+    #("arriving_stop", json.nullable(arriving_stop, stop_to_json)),
+  ])
+}
+
+pub type Train {
+  Train(
+    id: rt.TripId,
+    url: String,
+    route: RouteBullet,
+    headsign: Option(String),
+  )
+}
+
+fn train_decoder() -> decode.Decoder(Train) {
+  use id <- decode.field("id", decode.string |> decode.map(rt.TripId))
+  use url <- decode.field("url", decode.string)
+  use route <- decode.field("route", route_bullet.decoder())
+  use headsign <- decode.field("headsign", decode.optional(decode.string))
+  Train(id:, url:, route:, headsign:) |> decode.success
+}
+
+fn train_to_json(train: Train) -> json.Json {
+  let Train(id:, url:, route:, headsign:) = train
+  json.object([
+    #("id", json.string(rt.trip_id_to_string(id))),
+    #("url", json.string(url)),
+    #("route", route_bullet.to_json(route)),
+    #("headsign", json.nullable(headsign, json.string)),
+  ])
+}
+
+pub type Stop {
+  Stop(id: st.StopId, name: Option(String), time: Timestamp)
+}
+
+fn stop_decoder() -> decode.Decoder(Stop) {
+  use id <- decode.field("id", decode.string |> decode.map(st.StopId))
+  use name <- decode.field("name", decode.optional(decode.string))
+  use time <- decode.field(
+    "time",
+    decode.int |> decode.map(timestamp.from_unix_seconds),
+  )
+  Stop(id:, name:, time:) |> decode.success
+}
+
+fn stop_to_json(stop: Stop) -> json.Json {
+  let Stop(id: st.StopId(id), name:, time:) = stop
+  json.object([
+    #("id", json.string(id)),
+    #("name", json.nullable(name, json.string)),
+    #("time", json.int(timestamp.to_unix_seconds(time) |> float.round)),
   ])
 }
 
@@ -74,16 +156,10 @@ pub fn view(model: Model) -> Element(msg) {
 }
 
 fn connection_li(
-  connecting_train: connecting_train.ConnectingTrain,
+  connection: Connection,
   current_time: Time,
 ) -> Result(Element(msg), Nil) {
-  let connecting_train.ConnectingTrain(
-    trip_id:,
-    train_url:,
-    route:,
-    departing_stop:,
-    arriving_stop:,
-  ) = connecting_train
+  let Connection(train:, departing_stop:, arriving_stop:) = connection
 
   // Ensure that there's no nothing transfers
   use <- bool.guard(
@@ -91,43 +167,26 @@ fn connection_li(
     return: Error(Nil),
   )
 
+  let departing_details = case departing_stop {
+    option.Some(Stop(id:, name:, time:)) ->
+      html.details([], [
+        html.summary([], [
+          html.text("Departing: " <> name |> option.unwrap(or: "unknown stop")),
+        ]),
+      ])
+
+    option.None -> element.none()
+  }
+
   html.li([], [
-    html.a([attribute.href(train_url)], [
-      route_bullet(route),
-      html.span([attribute.class("lines")], [
-        case departing_stop {
-          option.Some(ConnectingStop(id: _, name:, time:)) ->
-            html.span([], case time |> util.min_from(current_time.timestamp) {
-              dt if dt < 0 -> [
-                // Already departed
-                html.span([attribute.class("description")], [
-                  html.text("Departed: " <> result.unwrap(name, "unknown stop")),
-                ]),
-              ]
-              _ -> [
-                // Departing in future
-                html.span([attribute.class("description")], [
-                  html.text(
-                    "Departing: " <> result.unwrap(name, "unknown stop"),
-                  ),
-                ]),
-                arrival_time.arrival_time(time, current_time),
-              ]
-            })
-          option.None -> element.none()
-        },
-        case arriving_stop {
-          option.Some(ConnectingStop(id: _, name:, time:)) ->
-            html.span([], [
-              html.span([attribute.class("description")], [
-                html.text("Arriving: " <> result.unwrap(name, "unknown stop")),
-              ]),
-              arrival_time.arrival_time(time, current_time),
-            ])
-          option.None -> element.none()
-        },
-      ]),
+    html.h2([], [
+      route_bullet(train.route),
+      case train.headsign {
+        option.Some(headsign) -> html.text(headsign)
+        option.None -> element.none()
+      },
     ]),
+    departing_details,
   ])
   |> Ok
 }

@@ -1,7 +1,13 @@
+import gleam/dict.{type Dict}
+import gleam/list
+import gleam/option
 import gleam/result
 import gleam/time/timestamp
 import lustre/attribute
 import lustre/element/html
+import subway_gleam/gtfs/rt
+import subway_gleam/gtfs/st
+import subway_gleam/shared/component/connecting_train
 import wisp
 
 import subway_gleam/server/connecting_trains
@@ -40,7 +46,9 @@ pub fn trip(
 }
 
 pub fn model(state: state.State, trip_str: String) -> Result(Model, Nil) {
-  let connections = connecting_trains.from_str(trip_str, state)
+  let connections =
+    connecting_trains.from_str(trip_str, state)
+    |> list.map(map_connecting_train(_, state.schedule.trips.headsigns))
 
   let data = gtfs_store.get(state.gtfs_store)
   let last_updated =
@@ -59,4 +67,34 @@ pub fn model(state: state.State, trip_str: String) -> Result(Model, Nil) {
     event_source: live_status.Unavailable,
   )
   |> Ok
+}
+
+fn map_connecting_train(
+  connection: connecting_train.ConnectingTrain,
+  headsigns: Dict(st.ShapeId, String),
+) -> trip.Connection {
+  let connecting_train.ConnectingTrain(
+    trip_id:,
+    train_url:,
+    route:,
+    departing_stop:,
+    arriving_stop:,
+  ) = connection
+
+  let headsign =
+    option.from_result({
+      use shape_id <- result.try(rt.parse_shape_id(trip_id))
+      dict.get(headsigns, shape_id)
+    })
+
+  trip.Connection(
+    train: trip.Train(id: trip_id, url: train_url, route:, headsign:),
+    departing_stop: option.map(departing_stop, map_connecting_stop),
+    arriving_stop: option.map(arriving_stop, map_connecting_stop),
+  )
+}
+
+fn map_connecting_stop(stop: connecting_train.ConnectingStop) -> trip.Stop {
+  let connecting_train.ConnectingStop(id:, name:, time:) = stop
+  trip.Stop(id:, name: option.from_result(name), time:)
 }
