@@ -8,9 +8,11 @@ import gleam/time/timestamp.{type Timestamp}
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
+import lustre/element/keyed
 
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
+import subway_gleam/shared/component/arrival.{type Arrival}
 import subway_gleam/shared/component/last_updated
 import subway_gleam/shared/component/route_bullet.{
   type RouteBullet, route_bullet,
@@ -111,24 +113,32 @@ fn train_to_json(train: Train) -> json.Json {
 }
 
 pub type Stop {
-  Stop(id: st.StopId, name: Option(String), time: Timestamp)
+  Stop(
+    id: st.StopId,
+    name: Option(String),
+    /// Arrivals that are close in time to the transfer
+    arrivals: List(Arrival),
+    time: Timestamp,
+  )
 }
 
 fn stop_decoder() -> decode.Decoder(Stop) {
   use id <- decode.field("id", decode.string |> decode.map(st.StopId))
   use name <- decode.field("name", decode.optional(decode.string))
+  use arrivals <- decode.field("arrivals", decode.list(of: arrival.decoder()))
   use time <- decode.field(
     "time",
     decode.int |> decode.map(timestamp.from_unix_seconds),
   )
-  Stop(id:, name:, time:) |> decode.success
+  Stop(id:, name:, arrivals:, time:) |> decode.success
 }
 
 fn stop_to_json(stop: Stop) -> json.Json {
-  let Stop(id: st.StopId(id), name:, time:) = stop
+  let Stop(id: st.StopId(id), name:, arrivals:, time:) = stop
   json.object([
     #("id", json.string(id)),
     #("name", json.nullable(name, json.string)),
+    #("arrivals", json.array(arrivals, of: arrival.to_json)),
     #("time", json.int(timestamp.to_unix_seconds(time) |> float.round)),
   ])
 }
@@ -168,16 +178,42 @@ fn connection_li(
   )
 
   let departing_details = case departing_stop {
-    option.Some(Stop(id:, name:, time:)) ->
-      html.details([], [
+    option.Some(Stop(id:, name:, arrivals:, time:)) ->
+      html.details([attribute.open(True)], [
         html.summary([], [
           html.text("Departing: " <> name |> option.unwrap(or: "unknown stop")),
         ]),
+        keyed.ol(
+          [attribute.class("arrival-list")],
+          list.filter_map(arrivals, arrival.li(
+            _,
+            highlighting: option.Some(train.id),
+            at: current_time,
+          )),
+        ),
       ])
 
     option.None -> element.none()
   }
 
+  let arriving_details = case arriving_stop {
+    option.Some(Stop(id:, name:, arrivals:, time:)) ->
+      html.details([attribute.open(True)], [
+        html.summary([], [
+          html.text("Arriving: " <> name |> option.unwrap(or: "unknown stop")),
+        ]),
+        keyed.ol(
+          [attribute.class("arrival-list")],
+          list.filter_map(arrivals, arrival.li(
+            _,
+            highlighting: option.Some(train.id),
+            at: current_time,
+          )),
+        ),
+      ])
+
+    option.None -> element.none()
+  }
   html.li([], [
     html.h2([], [
       route_bullet(train.route),
@@ -187,6 +223,7 @@ fn connection_li(
       },
     ]),
     departing_details,
+    arriving_details,
   ])
   |> Ok
 }
