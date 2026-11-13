@@ -1,26 +1,22 @@
-import gleam/bool
 import gleam/dynamic/decode
 import gleam/json
 import gleam/list
 import gleam/option
-import gleam/time/timestamp
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/element/keyed
-import subway_gleam/shared/component/connecting_train.{type ConnectingTrain}
 
 import subway_gleam/gtfs/st
-import subway_gleam/shared/component/arrival_time
+import subway_gleam/shared/component/connecting_train.{type ConnectingTrain}
 import subway_gleam/shared/component/last_updated
 import subway_gleam/shared/component/navbar.{navbar}
 import subway_gleam/shared/component/route_bullet.{
   type RouteBullet, route_bullet,
 }
-import subway_gleam/shared/util
+import subway_gleam/shared/component/stop.{type Stop}
 import subway_gleam/shared/util/live_status.{type LiveStatus}
 import subway_gleam/shared/util/time.{type Time}
-import subway_gleam/shared/util/timestamp_json
 
 pub type Model {
   Model(
@@ -47,7 +43,7 @@ pub fn view(model: Model) -> Element(msg) {
     cur_time:,
   ) = model
 
-  let stops = list.filter_map(stops, stop_li(_, highlighted_stop, cur_time))
+  let stops = list.filter_map(stops, stop.li(_, highlighted_stop, cur_time))
 
   let live_status = case event_source {
     live_status.Connecting(_) -> element.text("Conecting...")
@@ -72,7 +68,7 @@ pub fn model_decoder() -> decode.Decoder(Model) {
   use last_updated <- decode.field("last_updated", time.decoder())
   use route <- decode.field("route", route_bullet.decoder())
   use headsign <- decode.field("headsign", decode.string)
-  use stops <- decode.field("stops", decode.list(stop_decoder()))
+  use stops <- decode.field("stops", decode.list(stop.decoder()))
   use highlighted_stop <- decode.field(
     "highlighted_stop",
     decode.optional(decode.string |> decode.map(st.StopId)),
@@ -111,7 +107,7 @@ pub fn model_to_json(model: Model) -> json.Json {
     #("last_updated", time.to_json(last_updated)),
     #("route", route_bullet.to_json(route)),
     #("headsign", json.string(headsign)),
-    #("stops", json.array(stops, stop_to_json)),
+    #("stops", json.array(stops, stop.to_json)),
     #(
       "highlighted_stop",
       json.nullable(from: highlighted_stop, of: fn(stop_id) {
@@ -125,81 +121,4 @@ pub fn model_to_json(model: Model) -> json.Json {
     ),
     #("cur_time", time.to_json(cur_time)),
   ])
-}
-
-pub type Stop {
-  Stop(
-    id: st.StopId,
-    name: String,
-    stop_url: String,
-    transfers: List(RouteBullet),
-    time: timestamp.Timestamp,
-    dimmed: Bool,
-  )
-}
-
-fn stop_decoder() -> decode.Decoder(Stop) {
-  use id <- decode.field("id", decode.string |> decode.map(st.StopId))
-  use name <- decode.field("name", decode.string)
-  use stop_url <- decode.field("stop_url", decode.string)
-  use transfers <- decode.field(
-    "transfers",
-    decode.list(route_bullet.decoder()),
-  )
-  use time <- decode.field("time", timestamp_json.decoder())
-  use dimmed <- decode.field("dimmed", decode.bool)
-
-  decode.success(Stop(id:, name:, stop_url:, transfers:, time:, dimmed:))
-}
-
-fn stop_to_json(stop: Stop) -> json.Json {
-  let Stop(id:, name:, stop_url:, transfers:, time:, dimmed:) = stop
-  let st.StopId(id) = id
-
-  json.object([
-    #("id", json.string(id)),
-    #("name", json.string(name)),
-    #("stop_url", json.string(stop_url)),
-    #("transfers", json.array(transfers, route_bullet.to_json)),
-    #("time", timestamp_json.to_json(time)),
-    #("dimmed", json.bool(dimmed)),
-  ])
-}
-
-pub fn stop_li(
-  stop: Stop,
-  highlighted_stop: option.Option(st.StopId),
-  cur_time: Time,
-) -> Result(#(String, Element(msg)), Nil) {
-  let Stop(id:, name:, stop_url:, transfers:, time:, dimmed:) = stop
-
-  let dt = util.min_from(time, epoch: cur_time.timestamp)
-  use <- bool.guard(when: dt < 0, return: Error(Nil))
-
-  let transfers = list.map(transfers, route_bullet)
-  let is_highlighted = option.Some(id) == highlighted_stop
-
-  let st.StopId(id) = id
-  #(
-    id,
-    html.li([], [
-      html.a(
-        [
-          attribute.href(stop_url),
-          attribute.classes([
-            #("highlight", is_highlighted),
-            #("dimmed", dimmed),
-          ]),
-        ],
-        [
-          html.span([attribute.class("name")], [
-            html.text(name),
-            html.span([attribute.class("transfers")], transfers),
-          ]),
-          arrival_time.arrival_time(arriving_at: time, cur_time:),
-        ],
-      ),
-    ]),
-  )
-  |> Ok
 }

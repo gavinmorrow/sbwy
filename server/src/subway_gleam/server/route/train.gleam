@@ -3,24 +3,25 @@ import gleam/list
 import gleam/option
 import gleam/pair
 import gleam/result
-import gleam/set
 import gleam/time/timestamp
 import gleam/uri
 import lustre/attribute
 import lustre/element/html
-import subway_gleam/server/connecting_trains
-import subway_gleam/shared/component/connecting_train
 import wisp
 
 import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
 import subway_gleam/gtfs/st/route
+import subway_gleam/server/connecting_trains
 import subway_gleam/server/hydration_scripts.{hydration_scripts}
 import subway_gleam/server/lustre_middleware.{Document, try_lustre_res}
 import subway_gleam/server/state
 import subway_gleam/server/state/gtfs_store
+import subway_gleam/server/stop
 import subway_gleam/server/time_zone
+import subway_gleam/shared/component/connecting_train
 import subway_gleam/shared/component/route_bullet
+import subway_gleam/shared/component/stop.{type Stop} as _
 import subway_gleam/shared/route/train
 import subway_gleam/shared/util/live_status
 import subway_gleam/shared/util/time
@@ -150,7 +151,7 @@ fn stop_lis(
   state: state.State,
   trip_id: rt.TripId,
   connecting_trains: List(connecting_train.ConnectingTrain),
-) -> List(train.Stop) {
+) -> List(Stop) {
   stop_lis_loop(
     [],
     list.reverse(stops),
@@ -162,13 +163,13 @@ fn stop_lis(
 }
 
 fn stop_lis_loop(
-  acc_lis: List(train.Stop),
+  acc_lis: List(Stop),
   stops: List(rt.TrainStopping),
   before_connection: Bool,
   state: state.State,
   trip_id: rt.TripId,
   connecting_trains: List(connecting_train.ConnectingTrain),
-) -> List(train.Stop) {
+) -> List(Stop) {
   case stops {
     [] -> acc_lis
     [arrival, ..stops] -> {
@@ -182,7 +183,7 @@ fn stop_lis_loop(
 
       let acc_lis = case dict.get(state.schedule.stations, arrival.stop_id) {
         Ok(stop) -> [
-          stop_li(
+          stop.li(
             stop,
             arrival.time,
             trip_id,
@@ -213,72 +214,4 @@ fn stop_lis_loop(
       )
     }
   }
-}
-
-fn stop_li(
-  stop: st.Station,
-  time: timestamp.Timestamp,
-  trip_id: rt.TripId,
-  schedule: st.Schedule,
-  connecting_trains: List(connecting_train.ConnectingTrain),
-  before_connection: Bool,
-) -> train.Stop {
-  let is_last_connection = case list.last(connecting_trains) {
-    Ok(connecting_train.ConnectingTrain(
-      departing_stop: option.Some(connecting_train.ConnectingStop(id:, ..)),
-      ..,
-    )) -> id == stop.id
-    _ -> False
-  }
-
-  let stop_url = {
-    let stop_id = stop.id |> st.stop_id_to_string(direction: option.None)
-    let train_id = rt.trip_id_to_string(trip_id)
-
-    let query = {
-      let train = #("train_id", train_id)
-      let connections = #("connecting_trains", case is_last_connection {
-        True -> {
-          // TODO: are these empty strings correct
-          case list.reverse(connecting_trains) {
-            [] -> ""
-            [_this_stop, ..rest] ->
-              rest |> connecting_trains.to_string |> result.unwrap(or: "")
-          }
-        }
-        False ->
-          connecting_trains.append_arriving_stop_to_string(
-            to: case before_connection {
-              True -> []
-              False -> connecting_trains
-            },
-            trip_id:,
-            arriving_stop_id: stop.id,
-          )
-      })
-
-      uri.query_to_string([train, connections])
-    }
-    "/stop/" <> stop_id <> "?" <> query
-  }
-
-  let transfers =
-    dict.get(schedule.transfers, stop.id)
-    |> result.map(set.to_list)
-    |> result.unwrap(or: [])
-    |> list.flat_map(fn(transfer) {
-      st.daytime_routes(in: schedule, for: transfer.destination) |> set.to_list
-    })
-    |> list.map(st.route_data(for: _, in: schedule))
-    |> list.sort(by: st.route_compare)
-    |> list.map(route_bullet.from_route_data)
-
-  train.Stop(
-    id: stop.id,
-    name: stop.name,
-    stop_url:,
-    transfers:,
-    time:,
-    dimmed: before_connection,
-  )
 }
