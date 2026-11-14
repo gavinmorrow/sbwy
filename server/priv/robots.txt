@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /static/
+Disallow: /health
+Disallow: /stops/
+Disallow: /stop/
+Disallow: /train/
+Disallow: /trip/
