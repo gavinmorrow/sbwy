@@ -12,8 +12,8 @@ erl_crash.dump
 *.key
 
 # Don't check in the generated .js files
-server/priv/stop.js
 server/priv/stops.js
+server/priv/station.js
 server/priv/train.js
 server/priv/trip.js
 
