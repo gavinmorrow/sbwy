@@ -63,7 +63,7 @@ emergency/alert/critical/error/warning/notice/info/debug.
 #### Profiling
 
 For `profile_pages`, it is a comma-separated list with potential values of:
-`stops`, `stop`, `stop_alerts`, and `train`.
+`stops`, `station`, `stop_alerts`, and `train`.
 
 ### Extra st data
 

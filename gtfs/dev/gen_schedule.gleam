@@ -32,7 +32,7 @@ pub fn main() -> Nil {
 
 fn schedule_to_json(schedule: st.Schedule) -> json.Json {
   json.object([
-    #("stops", stops_to_json(schedule.stops)),
+    #("stations", stops_to_json(schedule.stations)),
     #("trips", trips_to_json(schedule.trips)),
     #("services", services_to_json(schedule.services)),
     #("transfers", transfers_to_json(schedule.transfers)),
@@ -40,9 +40,9 @@ fn schedule_to_json(schedule: st.Schedule) -> json.Json {
   ])
 }
 
-fn stops_to_json(stops: dict.Dict(st.StopId, st.Stop)) -> json.Json {
-  json.dict(stops, stop_id_to_string, fn(stop: st.Stop) -> json.Json {
-    let st.Stop(
+fn stops_to_json(stops: dict.Dict(st.StopId, st.Station)) -> json.Json {
+  json.dict(stops, stop_id_to_string, fn(stop: st.Station) -> json.Json {
+    let st.Station(
       id:,
       name:,
       lat:,
@@ -171,7 +171,10 @@ fn load_st_extra_data() -> st_extra.Data {
     simplifile.read(from: "./priv/" <> st_extra.data_file_path)
     as "data file should be prebuilt"
   let assert Ok(stops) =
-    json.parse(file, using: decode.dict(decode.string, st_extra.stop_decoder()))
+    json.parse(
+      file,
+      using: decode.dict(decode.string, st_extra.station_decoder()),
+    )
     as "prebuilt data should be have correct shape"
   stops
 }

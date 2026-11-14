@@ -30,10 +30,10 @@ pub fn arrival(
     |> dict.get(shape_id)
     |> result.lazy_or(fn() {
       get_final_stop(shape_id)
-      |> result.try(dict.get(schedule.stops, _))
-      |> result.map(fn(stop) { stop.name })
+      |> result.try(dict.get(schedule.stations, _))
+      |> result.map(fn(station) { station.name })
       // TODO: maybe don't want to always have a value?
-      |> result.unwrap(or: "<Unknown stop>")
+      |> result.unwrap(or: "<Unknown station>")
       |> Ok
     })
   }

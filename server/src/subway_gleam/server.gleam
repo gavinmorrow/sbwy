@@ -30,14 +30,14 @@ import subway_gleam/server/normalize_path_trailing_slash.{
   normalize_path_trailing_slash,
 }
 import subway_gleam/server/route
-import subway_gleam/server/route/stop
+import subway_gleam/server/route/station
 import subway_gleam/server/route/train
 import subway_gleam/server/route/trip
 import subway_gleam/server/sse_gtfs.{sse_gtfs}
 import subway_gleam/server/st_extra
 import subway_gleam/server/state
 import subway_gleam/server/state/gtfs_store
-import subway_gleam/shared/route/stop as shared_stop
+import subway_gleam/shared/route/station as shared_station
 import subway_gleam/shared/route/train as shared_train
 import subway_gleam/shared/route/trip as shared_trip
 
@@ -181,8 +181,8 @@ fn ewe_handler(
     // TODO: figure out some abstraction for this. also move out of this file
     ["stop", stop_id, "model_stream"] ->
       sse_gtfs(req, state_ref, fn() {
-        stop.model(state, stop_id, req.query)
-        |> result.map(shared_stop.model_to_json)
+        station.model(state, stop_id, req.query)
+        |> result.map(shared_station.model_to_json)
       })
     ["train", train_id, "model_stream"] ->
       sse_gtfs(req, state_ref, fn() {
@@ -231,10 +231,12 @@ fn handler(state: state.Ref, req: wisp.Request) -> wisp.Response {
         True -> eflame.profile("stops", fn() { route.stops(req, state) })
         False -> route.stops(req, state)
       }
+    // TODO: change url to station? Consider redirects, and getting rid of bots.
     ["stop", stop_id] ->
       case env.profile_pages() |> list.contains("stop") {
-        True -> eflame.profile("stop", fn() { route.stop(req, state, stop_id) })
-        False -> route.stop(req, state, stop_id)
+        True ->
+          eflame.profile("stop", fn() { route.station(req, state, stop_id) })
+        False -> route.station(req, state, stop_id)
       }
     ["stop", _stop_id, "alerts"] ->
       // slightly hacky, but this works b/c if the route is unrecognized, then

@@ -23,15 +23,15 @@ import subway_gleam/shared/util/stop_id_json
 
 pub type Model {
   Model(
-    all_stops: List(st.Stop),
+    all_stations: List(st.Station),
     stop_routes: dict.Dict(st.StopId, List(route_bullet.RouteBullet)),
     cur_position: option.Option(geolocation.Position),
-    fav_stops: List(StopLi),
+    fav_stations: List(StationLi),
   )
 }
 
 pub fn view(model: Model) -> element.Element(msg) {
-  let Model(all_stops:, stop_routes:, cur_position:, fav_stops:) = model
+  let Model(all_stations:, stop_routes:, cur_position:, fav_stations:) = model
 
   // DEBUG
   // let cur_position =
@@ -45,38 +45,45 @@ pub fn view(model: Model) -> element.Element(msg) {
   //   |> option.Some
 
   // Automatically add in routes
-  let stop_li = fn(stop: StopLi) {
-    let routes = stop_routes |> dict.get(stop.id) |> result.unwrap(or: [])
-    stop_li(stop, routes)
+  let station_li = fn(station: StationLi) {
+    let routes = stop_routes |> dict.get(station.id) |> result.unwrap(or: [])
+    station_li(station, routes)
   }
 
-  let stops_nearby =
+  let stations_nearby =
     option.map(cur_position, fn(pos) {
-      all_stops
-      |> list.filter(keeping: fn(stop) { stop_distance(stop, pos:) <. 800.0 })
-      |> list.sort(by: fn(a, b) {
-        float.compare(stop_distance(a, pos:), with: stop_distance(b, pos:))
+      all_stations
+      |> list.filter(keeping: fn(station) {
+        station_distance(station, pos:) <. 800.0
       })
-      |> list.map(fn(stop) { stop_li(StopLi(id: stop.id, name: stop.name)) })
+      |> list.sort(by: fn(a, b) {
+        float.compare(
+          station_distance(a, pos:),
+          with: station_distance(b, pos:),
+        )
+      })
+      |> list.map(fn(station) {
+        station_li(StationLi(id: station.id, name: station.name))
+      })
     })
-  let stops_nearby = case stops_nearby {
-    option.Some(lis) -> keyed.ol([attribute.class("stops-nearby-list")], lis)
-    option.None -> html.p([], [html.em([], [html.text("No stops nearby.")])])
+  let stations_nearby = case stations_nearby {
+    option.Some(lis) -> keyed.ol([attribute.class("stations-nearby-list")], lis)
+    option.None -> html.p([], [html.em([], [html.text("No stations nearby.")])])
   }
 
-  let fav_stops = list.map(fav_stops, with: stop_li)
-  let fav_stops = case fav_stops {
-    [] -> html.p([], [html.em([], [html.text("No favorite stops.")])])
-    lis -> keyed.ol([attribute.class("favorite-stops-list")], lis)
+  let fav_stations = list.map(fav_stations, with: station_li)
+  let fav_stations = case fav_stations {
+    [] -> html.p([], [html.em([], [html.text("No favorite stations.")])])
+    lis -> keyed.ol([attribute.class("favorite-stations-list")], lis)
   }
 
   element.fragment([
     html.div([], [
-      html.h1([], [html.text("Stops")]),
+      html.h1([], [html.text("Stations")]),
       html.h2([], [html.text("Favorites")]),
-      fav_stops,
+      fav_stations,
       html.h2([], [html.text("Nearby")]),
-      stops_nearby,
+      stations_nearby,
       navbar(),
     ]),
     html.hr([]),
@@ -88,18 +95,18 @@ pub fn view(model: Model) -> element.Element(msg) {
   ])
 }
 
-pub type StopLi {
-  StopLi(id: st.StopId, name: String)
+pub type StationLi {
+  StationLi(id: st.StopId, name: String)
 }
 
-pub fn stop_li_decoder() -> decode.Decoder(StopLi) {
+pub fn station_li_decoder() -> decode.Decoder(StationLi) {
   use id <- decode.field("id", decode.string |> decode.map(st.StopId))
   use name <- decode.field("name", decode.string)
-  decode.success(StopLi(id:, name:))
+  decode.success(StationLi(id:, name:))
 }
 
-pub fn stop_li_to_json(stop_li: StopLi) -> json.Json {
-  let StopLi(id:, name:) = stop_li
+pub fn station_li_to_json(station_li: StationLi) -> json.Json {
+  let StationLi(id:, name:) = station_li
   let st.StopId(id) = id
   json.object([
     #("id", json.string(id)),
@@ -107,11 +114,12 @@ pub fn stop_li_to_json(stop_li: StopLi) -> json.Json {
   ])
 }
 
-fn stop_li(
-  stop: StopLi,
+fn station_li(
+  station: StationLi,
   routes: List(route_bullet.RouteBullet),
 ) -> #(String, element.Element(msg)) {
-  let id = stop.id |> st.stop_id_to_string(option.None)
+  let id = station.id |> st.stop_id_to_string(option.None)
+  // TODO: url function
   let url = "/stop/" <> id <> "/"
   let routes =
     list.map(routes, route_bullet.route_bullet)
@@ -121,18 +129,21 @@ fn stop_li(
     id,
     html.li([], [
       html.a([attribute.href(url)], [
-        html.text(stop.name),
+        html.text(station.name),
         routes,
       ]),
     ]),
   )
 }
 
-/// The distance between a stop and a position, in meters.
-fn stop_distance(stop: st.Stop, pos pos: geolocation.Position) -> Float {
+/// The distance between a station and a position, in meters.
+fn station_distance(
+  station: st.Station,
+  pos pos: geolocation.Position,
+) -> Float {
   // TODO: account for pos accuracy
   let distance_km =
-    haversine.distance(from: #(stop.lat, stop.lon), to: #(
+    haversine.distance(from: #(station.lat, station.lon), to: #(
       pos.latitude,
       pos.longitude,
     ))
@@ -140,20 +151,33 @@ fn stop_distance(stop: st.Stop, pos pos: geolocation.Position) -> Float {
 }
 
 pub fn model_decoder() -> decode.Decoder(Model) {
-  use all_stops <- decode.field("all_stops", decode.list(of: stop_decoder()))
+  use all_stations <- decode.field(
+    "all_stations",
+    decode.list(of: station_decoder()),
+  )
   use stop_routes <- decode.field(
     "stop_routes",
     decode.dict(stop_id_json.decoder(), decode.list(of: route_bullet.decoder())),
   )
 
-  Model(all_stops:, stop_routes:, cur_position: option.None, fav_stops: [])
+  Model(
+    all_stations:,
+    stop_routes:,
+    cur_position: option.None,
+    fav_stations: [],
+  )
   |> decode.success
 }
 
 pub fn model_to_json(model: Model) -> json.Json {
-  let Model(all_stops:, stop_routes:, cur_position: _, fav_stops: _) = model
+  let Model(
+    all_stations: all_stations,
+    stop_routes:,
+    cur_position: _,
+    fav_stations: _,
+  ) = model
   json.object([
-    #("all_stops", json.array(from: all_stops, of: stop_to_json)),
+    #("all_stations", json.array(from: all_stations, of: station_to_json)),
     #(
       "stop_routes",
       json.dict(stop_routes, stop_id_json.to_dict_key, json.array(
@@ -164,7 +188,7 @@ pub fn model_to_json(model: Model) -> json.Json {
   ])
 }
 
-fn stop_decoder() -> decode.Decoder(st.Stop) {
+fn station_decoder() -> decode.Decoder(st.Station) {
   let float_or_int_decoder =
     decode.one_of(decode.float, or: [decode.int |> decode.map(int.to_float)])
 
@@ -186,7 +210,7 @@ fn stop_decoder() -> decode.Decoder(st.Stop) {
     decode.string,
   )
 
-  st.Stop(
+  st.Station(
     id:,
     name:,
     lat:,
@@ -201,8 +225,8 @@ fn stop_decoder() -> decode.Decoder(st.Stop) {
   |> decode.success
 }
 
-fn stop_to_json(stop: st.Stop) -> json.Json {
-  let st.Stop(
+fn station_to_json(station: st.Station) -> json.Json {
+  let st.Station(
     id:,
     name:,
     lat:,
@@ -213,7 +237,7 @@ fn stop_to_json(stop: st.Stop) -> json.Json {
     daytime_routes:,
     north_direction_label:,
     south_direction_label:,
-  ) = stop
+  ) = station
   let st.StopId(id) = id
 
   json.object([

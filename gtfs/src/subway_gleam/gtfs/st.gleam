@@ -38,7 +38,7 @@ pub type Feed {
 
 pub type Schedule {
   Schedule(
-    stops: dict.Dict(StopId, Stop),
+    stations: dict.Dict(StopId, Station),
     trips: Trips,
     services: dict.Dict(Route, Service),
     transfers: dict.Dict(StopId, set.Set(Transfer)),
@@ -103,10 +103,13 @@ pub fn parse(
   use trips <- result.try(parse_file("trips.txt", trip_decoder()))
   let trips = trips_from_rows(trips)
 
-  use stops <- result.try(parse_file("stops.txt", stop_decoder(st_extra_data)))
-  let stops =
-    list.fold(over: stops, from: dict.new(), with: fn(acc, stop) {
-      acc |> dict.insert(for: stop.id, insert: stop)
+  use stations <- result.try(parse_file(
+    "stops.txt",
+    station_decoder(st_extra_data),
+  ))
+  let stations =
+    list.fold(over: stations, from: dict.new(), with: fn(acc, station) {
+      acc |> dict.insert(for: station.id, insert: station)
     })
 
   use stop_times <- result.try(parse_file("stop_times.txt", stop_time_decoder()))
@@ -133,7 +136,7 @@ pub fn parse(
       dict.insert(route, into: routes, for: route.id)
     })
 
-  Schedule(stops:, trips:, services:, transfers:, routes:) |> Ok
+  Schedule(stations: stations, trips:, services:, transfers:, routes:) |> Ok
 }
 
 fn parse_stop_times(
@@ -267,8 +270,8 @@ fn stop_time_decoder() -> decode.Decoder(StopTime) {
   |> decode.success
 }
 
-pub type Stop {
-  Stop(
+pub type Station {
+  Station(
     id: StopId,
     name: String,
     lat: Float,
@@ -277,7 +280,7 @@ pub type Stop {
     parent_station: option.Option(StopId),
     // === Extra fields === //
     borough: st_extra.Borough,
-    /// The routes that "normally" (ie, daytime weekdays) stop at the stop.
+    /// The routes that "normally" (ie, daytime weekdays) stop at the station.
     /// Does not account for rush hour express.
     daytime_routes: set.Set(Route),
     north_direction_label: String,
@@ -285,9 +288,9 @@ pub type Stop {
   )
 }
 
-fn stop_decoder(
-  st_extra_data: dict.Dict(String, st_extra.Stop),
-) -> decode.Decoder(Stop) {
+fn station_decoder(
+  st_extra_data: dict.Dict(String, st_extra.Station),
+) -> decode.Decoder(Station) {
   use #(id, _direction) <- decode.field("stop_id", stop_id_decoder())
   use name <- decode.field("stop_name", decode.string)
   use lat <- decode.field(
@@ -319,7 +322,7 @@ fn stop_decoder(
       |> decode.map(option.Some),
   )
 
-  let assert Ok(st_extra.Stop(
+  let assert Ok(st_extra.Station(
     borough:,
     daytime_routes:,
     north_direction_label:,
@@ -329,7 +332,7 @@ fn stop_decoder(
       StopId(id) -> id
     })
 
-  decode.success(Stop(
+  decode.success(Station(
     id:,
     name:,
     lat:,
@@ -347,9 +350,9 @@ pub fn daytime_routes(
   in schedule: Schedule,
   for stop_id: StopId,
 ) -> set.Set(Route) {
-  let stop = dict.get(schedule.stops, stop_id)
-  case stop {
-    Ok(stop) -> stop.daytime_routes
+  let station = dict.get(schedule.stations, stop_id)
+  case station {
+    Ok(station) -> station.daytime_routes
     Error(Nil) -> set.new()
   }
 }

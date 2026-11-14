@@ -16,7 +16,7 @@ import subway_gleam/shared/util/time.{type Time}
 
 pub type Model {
   Model(
-    stop_name: String,
+    station_name: String,
     last_updated: Time,
     // TODO: don't actually need *all* routes. trim them down server-side
     all_routes: set.Set(st.RouteData),
@@ -38,7 +38,8 @@ pub type Alert {
 }
 
 pub fn view(model: Model) -> Element(msg) {
-  let Model(stop_name:, last_updated:, all_routes:, alerts:, cur_time:) = model
+  let Model(station_name:, last_updated:, all_routes:, alerts:, cur_time:) =
+    model
   let route_selection = {
     let bullets =
       all_routes
@@ -74,7 +75,7 @@ pub fn view(model: Model) -> Element(msg) {
 
   element.fragment([
     html.h1([], [
-      html.text(stop_name),
+      html.text(station_name),
     ]),
     html.aside([], [last_updated.last_updated(at: last_updated, cur_time:)]),
     html.nav([], [

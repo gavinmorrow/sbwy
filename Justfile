@@ -16,7 +16,7 @@ server cmd="check":
 client cmd="check":
     gleam {{cmd}}
 
-build-pages: (build-page "stops") (build-page "stop") (build-page "train") (build-page "trip")
+build-pages: (build-page "stops") (build-page "station") (build-page "train") (build-page "trip")
 
 [working-directory: 'client']
 build-page name:
@@ -32,5 +32,5 @@ start-prof:
 start-stop-prof:
     # Set these env vars here to override .env file
     # the [env()] attribute doesn't seem to override
-    profile_pages="stops,stop,stop_alerts,train" http_port=3000 gtfs_st="local" gleam run -m subway_gleam/server
+    profile_pages="stops,station,stop_alerts,train" http_port=3000 gtfs_st="local" gleam run -m subway_gleam/server
 

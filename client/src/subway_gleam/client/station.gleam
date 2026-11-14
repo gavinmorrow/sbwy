@@ -12,7 +12,7 @@ import plinth/browser/window
 
 import subway_gleam/client/stops
 import subway_gleam/client/util/set_interval
-import subway_gleam/shared/route/stop.{type Model, Model, view}
+import subway_gleam/shared/route/station.{type Model, Model, view}
 import subway_gleam/shared/util/live_status.{live_status}
 import subway_gleam/shared/util/time.{Time}
 
@@ -21,9 +21,9 @@ pub fn main() -> Result(lustre.Runtime(Msg), lustre.Error) {
   let assert Ok(Ok(model)) =
     document.get_element_by_id("model")
     |> result.map(element.inner_text)
-    |> result.map(json.parse(_, stop.model_decoder()))
+    |> result.map(json.parse(_, station.model_decoder()))
 
-  let is_fav = stops.is_fav_stop(stop.model_to_stop_li(model))
+  let is_fav = stops.is_fav_station(station.model_to_station_li(model))
   let model = Model(..model, is_fav:)
 
   let app = lustre.application(init, update, view(_, ToggleFavBtnPressed))
@@ -54,15 +54,15 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.from(fn(_dispatch) {
         // TODO: handle error
         let assert Ok(_) = case model.is_fav {
-          True -> stops.remove_fav_stop(stop.model_to_stop_li(model))
-          False -> stops.add_fav_stop(stop.model_to_stop_li(model))
+          True -> stops.remove_fav_station(station.model_to_station_li(model))
+          False -> stops.add_fav_station(station.model_to_station_li(model))
         }
         Nil
       }),
     )
 
     EventSource(lustre_event_source.Data(data)) -> {
-      case json.parse(from: data, using: stop.model_decoder()) {
+      case json.parse(from: data, using: station.model_decoder()) {
         Ok(Model(
           id:,
           name:,

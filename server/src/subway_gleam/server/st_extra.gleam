@@ -11,8 +11,11 @@ pub fn load_data() -> st_extra.Data {
   let assert Ok(file) =
     simplifile.read(from: gtfs_dir <> st_extra.data_file_path)
     as "data file should be prebuilt"
-  let assert Ok(stops) =
-    json.parse(file, using: decode.dict(decode.string, st_extra.stop_decoder()))
+  let assert Ok(stations) =
+    json.parse(
+      file,
+      using: decode.dict(decode.string, st_extra.station_decoder()),
+    )
     as "prebuilt data should be have correct shape"
-  stops
+  stations
 }

@@ -140,8 +140,8 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
   ])
 }
 
-pub fn model_to_stop_li(model: Model) -> stops.StopLi {
-  stops.StopLi(id: model.id, name: model.name)
+pub fn model_to_station_li(model: Model) -> stops.StationLi {
+  stops.StationLi(id: model.id, name: model.name)
 }
 
 pub fn model_decoder() -> decode.Decoder(Model) {

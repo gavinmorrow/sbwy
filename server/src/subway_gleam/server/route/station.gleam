@@ -27,17 +27,17 @@ import subway_gleam/server/time_zone
 import subway_gleam/shared/component/arrival.{type Arrival} as _
 import subway_gleam/shared/component/connecting_train.{type ConnectingTrain}
 import subway_gleam/shared/component/route_bullet
-import subway_gleam/shared/route/stop
+import subway_gleam/shared/route/station
 import subway_gleam/shared/util
 import subway_gleam/shared/util/live_status
 import subway_gleam/shared/util/time
 
-pub fn stop(
+pub fn station(
   req: wisp.Request,
   state: state.State,
   stop_id: String,
 ) -> wisp.Response {
-  use <- log.time("stop route")
+  use <- log.time("station route")
 
   use req <- try_lustre_res(req)
 
@@ -47,18 +47,18 @@ pub fn stop(
 
       let head = [
         html.title([], "Trains at " <> model.name),
-        hydration_scripts("stop", stop.model_to_json(model)),
+        hydration_scripts("station", station.model_to_json(model)),
       ]
       let body = [
         html.div([attribute.id("app")], [
-          stop.view(model, Nil),
+          station.view(model, Nil),
         ]),
       ]
 
       Ok(#(Document(head:, body:), wisp.response(200)))
     }
     Error(InvalidStopId(stop_id)) -> Error(error_invalid_stop_id(stop_id))
-    Error(UnknownStop(stop_id)) -> Error(error_unknown_stop(stop_id))
+    Error(UnknownStation(stop_id)) -> Error(error_unknown_station(stop_id))
   }
 }
 
@@ -66,7 +66,7 @@ pub fn model(
   state: state.State,
   stop_id: String,
   query: option.Option(String),
-) -> Result(stop.Model, Error) {
+) -> Result(station.Model, Error) {
   use <- log.time("model")
 
   // TODO: make this a function?
@@ -86,16 +86,16 @@ pub fn model(
     st.parse_stop_id_no_direction(stop_id)
     |> result.replace_error(InvalidStopId(stop_id)),
   )
-  use stop <- result.try(
-    state.schedule.stops
+  use station <- result.try(
+    state.schedule.stations
     |> dict.get(stop_id)
-    |> result.replace_error(UnknownStop(stop_id)),
+    |> result.replace_error(UnknownStation(stop_id)),
   )
 
   let transfers =
     transfers(
       state.schedule,
-      stop,
+      station,
       connecting_trains.to_string(connecting_trains),
     )
 
@@ -115,17 +115,17 @@ pub fn model(
       state.tz_db |> time_zone.new_york_offset(at: last_updated),
     )
 
-  Ok(stop.Model(
-    id: stop.id,
-    name: stop.name,
+  Ok(station.Model(
+    id: station.id,
+    name: station.name,
     last_updated:,
     transfers:,
     alerted_routes:,
     alert_summary:,
     uptown:,
     downtown:,
-    north_direction_label: stop.north_direction_label,
-    south_direction_label: stop.south_direction_label,
+    north_direction_label: station.north_direction_label,
+    south_direction_label: station.south_direction_label,
     highlighted_train:,
     connecting_trains:,
     event_source: live_status.Unavailable,
@@ -136,11 +136,11 @@ pub fn model(
 
 fn transfers(
   schedule: st.Schedule,
-  stop: st.Stop,
+  station: st.Station,
   connecting_trains: Result(String, Nil),
-) -> List(stop.Transfer) {
+) -> List(station.Transfer) {
   schedule.transfers
-  |> dict.get(stop.id)
+  |> dict.get(station.id)
   |> result.unwrap(or: set.new())
   |> set.map(fn(transfer) {
     let st.StopId(desination_id) = transfer.destination
@@ -159,10 +159,11 @@ fn transfers(
       Ok(connecting_trains) -> "?connecting_trains=" <> connecting_trains
       Error(Nil) -> ""
     }
-    stop.Transfer(
+    station.Transfer(
+      // TODO: url function
       destination_url: "/stop/" <> desination_id <> "/" <> query,
       routes:,
-      highlighted: transfer.destination == stop.id,
+      highlighted: transfer.destination == station.id,
     )
   })
   // TODO: also need to sort each group in sort order
@@ -176,7 +177,7 @@ fn alerts(
 ) -> #(List(route_bullet.RouteBullet), String) {
   // Add in alerts from arrivals.
   // Needed b/c if a train is rerouted then alerts from that train should be
-  // shown at this stop.
+  // shown at this station.
   let routes =
     set.union(
       of: st.daytime_routes(in: schedule, for: stop_id),
@@ -273,7 +274,7 @@ pub fn filter_alerts(
         |> result.map(set.contains(_, in: routes))
         |> result.unwrap(or: False)
 
-      let matches_stop =
+      let matches_station =
         target.stop_id
         |> option.to_result(Nil)
         |> result.try(st.parse_stop_id)
@@ -281,14 +282,14 @@ pub fn filter_alerts(
         |> result.map(fn(target_stop_id) { target_stop_id == stop_id })
         |> result.unwrap(or: False)
 
-      matches_route_id || matches_stop
+      matches_route_id || matches_station
     })
   alerts
 }
 
 pub type Error {
   InvalidStopId(stop_id: String)
-  UnknownStop(stop_id: st.StopId)
+  UnknownStation(stop_id: st.StopId)
 }
 
 pub fn error_invalid_stop_id(
@@ -302,14 +303,14 @@ pub fn error_invalid_stop_id(
   )
 }
 
-pub fn error_unknown_stop(
+pub fn error_unknown_station(
   stop_id: st.StopId,
 ) -> #(lustre_middleware.LustreRes(b), wisp.Response) {
   #(
-    Document(head: [html.title([], "Error: Unknown stop")], body: [
+    Document(head: [html.title([], "Error: Unknown station")], body: [
       html.p([], [
         html.text(
-          "Error: Could not find stop "
+          "Error: Could not find station "
           <> st.stop_id_to_string(stop_id, option.None),
         ),
       ]),

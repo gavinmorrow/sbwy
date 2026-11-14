@@ -151,8 +151,8 @@ h2 {
 
 .arrival-list,
 .stops-list,
-.stops-nearby-list,
-.favorite-stops-list {
+.stations-nearby-list,
+.favorite-stations-list {
   list-style: none;
   padding: 0;
 

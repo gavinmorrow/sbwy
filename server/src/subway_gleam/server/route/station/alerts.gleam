@@ -12,11 +12,11 @@ import subway_gleam/gtfs/rt
 import subway_gleam/gtfs/st
 import subway_gleam/gtfs/st/route
 import subway_gleam/server/lustre_middleware.{Document, try_lustre_res}
-import subway_gleam/server/route/stop
+import subway_gleam/server/route/station
 import subway_gleam/server/state
 import subway_gleam/server/state/gtfs_store
 import subway_gleam/server/time_zone
-import subway_gleam/shared/route/stop/alerts
+import subway_gleam/shared/route/station/alerts
 import subway_gleam/shared/util/time
 
 pub fn alerts(
@@ -29,12 +29,12 @@ pub fn alerts(
 
   use stop_id <- result.try(
     st.parse_stop_id_no_direction(stop_id)
-    |> result.replace_error(stop.error_invalid_stop_id(stop_id)),
+    |> result.replace_error(station.error_invalid_stop_id(stop_id)),
   )
-  use stop <- result.try(
-    state.schedule.stops
+  use station <- result.try(
+    state.schedule.stations
     |> dict.get(stop_id)
-    |> result.replace_error(stop.error_unknown_stop(stop_id)),
+    |> result.replace_error(station.error_unknown_station(stop_id)),
   )
 
   let all_routes = st.daytime_routes(in: state.schedule, for: stop_id)
@@ -45,7 +45,7 @@ pub fn alerts(
 
   // Add in alerts from arrivals.
   // Needed b/c if a train is rerouted then alerts from that train should be
-  // shown at this stop.
+  // shown at this stations.
   let all_routes =
     set.union(
       of: all_routes,
@@ -60,7 +60,7 @@ pub fn alerts(
   let alerts =
     gtfs_store.alerts(data)
     |> result.unwrap(or: [])
-    |> stop.filter_alerts(routes, stop_id)
+    |> station.filter_alerts(routes, stop_id)
     |> list.map(rt_alert_to_model_alert(_, state))
   let all_routes =
     set.map(all_routes, with: st.route_data(in: state.schedule, for: _))
@@ -77,14 +77,14 @@ pub fn alerts(
 
   let model =
     alerts.Model(
-      stop_name: stop.name,
+      station_name: station.name,
       last_updated:,
       all_routes:,
       alerts:,
       cur_time:,
     )
 
-  let head = [html.title([], "Trains at " <> stop.name)]
+  let head = [html.title([], "Trains at " <> station.name)]
   let body = [html.div([attribute.id("app")], [alerts.view(model)])]
 
   Ok(#(Document(head:, body:), wisp.response(200)))

@@ -22,16 +22,17 @@ pub fn schedule() -> Result(st.Schedule, st.FetchError) {
 }
 
 fn decode_schedule() -> decode.Decoder(st.Schedule) {
-  use stops <- decode.field("stops", stops_decoder())
+  use stations <- decode.field("stations", stations_decoder())
   use trips <- decode.field("trips", trips_decoder())
   use services <- decode.field("services", services_decoder())
   use transfers <- decode.field("transfers", transfers_decoder())
   use routes <- decode.field("routes", routes_decoder())
 
-  st.Schedule(stops:, trips:, services:, transfers:, routes:) |> decode.success
+  st.Schedule(stations:, trips:, services:, transfers:, routes:)
+  |> decode.success
 }
 
-fn stops_decoder() -> decode.Decoder(dict.Dict(st.StopId, st.Stop)) {
+fn stations_decoder() -> decode.Decoder(dict.Dict(st.StopId, st.Station)) {
   decode.dict(stop_id_decoder(), {
     use id <- decode.field("id", stop_id_decoder())
     use name <- decode.field("name", decode.string)
@@ -59,7 +60,7 @@ fn stops_decoder() -> decode.Decoder(dict.Dict(st.StopId, st.Stop)) {
       decode.string,
     )
 
-    st.Stop(
+    st.Station(
       id:,
       name:,
       lat:,

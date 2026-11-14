@@ -95,7 +95,7 @@ pub fn model(
           // the trip
           use last_stop <- result.try(list.last(stops))
           use last_stop <- result.map(dict.get(
-            state.schedule.stops,
+            state.schedule.stations,
             last_stop.stop_id,
           ))
           last_stop.name
@@ -180,7 +180,7 @@ fn stop_lis_loop(
         _ -> False
       }
 
-      let acc_lis = case dict.get(state.schedule.stops, arrival.stop_id) {
+      let acc_lis = case dict.get(state.schedule.stations, arrival.stop_id) {
         Ok(stop) -> [
           stop_li(
             stop,
@@ -216,7 +216,7 @@ fn stop_lis_loop(
 }
 
 fn stop_li(
-  stop: st.Stop,
+  stop: st.Station,
   time: timestamp.Timestamp,
   trip_id: rt.TripId,
   schedule: st.Schedule,

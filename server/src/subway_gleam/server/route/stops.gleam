@@ -16,15 +16,18 @@ import subway_gleam/shared/route/stops
 pub fn stops(req: wisp.Request, state: state.State) -> wisp.Response {
   use _req <- lustre_middleware.lustre_res(req)
 
-  let all_stops =
-    state.schedule.stops
+  let all_stations =
+    state.schedule.stations
     |> dict.values
   let stop_routes =
-    state.schedule.stops
+    state.schedule.stations
     // Transform into expected shape
-    |> dict.fold(from: dict.new(), with: fn(acc, stop_id, stop) {
+    |> dict.fold(from: dict.new(), with: fn(acc, stop_id, station) {
       let routes =
-        set.map(stop.daytime_routes, st.route_data(for: _, in: state.schedule))
+        set.map(station.daytime_routes, st.route_data(
+          for: _,
+          in: state.schedule,
+        ))
         |> set.to_list
         |> list.sort(by: st.route_compare)
         |> list.map(route_bullet.from_route_data)
@@ -34,14 +37,14 @@ pub fn stops(req: wisp.Request, state: state.State) -> wisp.Response {
 
   let model =
     stops.Model(
-      all_stops:,
+      all_stations:,
       stop_routes:,
       cur_position: option.None,
-      fav_stops: [],
+      fav_stations: [],
     )
 
   let head = [
-    html.title([], "Stops"),
+    html.title([], "Stations"),
     hydration_scripts("stops", stops.model_to_json(model)),
   ]
   let body = [html.div([attribute.id("app")], [stops.view(model)])]

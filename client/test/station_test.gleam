@@ -15,9 +15,9 @@ import subway_gleam/shared/component/route_bullet
 import subway_gleam/shared/util/live_status
 import subway_gleam/shared/util/time.{type Time, Time}
 
-import subway_gleam/client/stop.{type Msg, ToggleFavBtnPressed, update} as _
+import subway_gleam/client/station.{type Msg, ToggleFavBtnPressed, update} as _
 import subway_gleam/shared/component/arrival.{type Arrival, Arrival}
-import subway_gleam/shared/route/stop.{type Model, Model, view} as _
+import subway_gleam/shared/route/station.{type Model, Model, view} as _
 
 pub fn arrivals_are_in_correct_format_test() -> Nil {
   let html =

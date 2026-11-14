@@ -12,12 +12,12 @@ import subway_gleam/gtfs/st/route.{type Route}
 pub const data_file_path: String = "/st_extra.json"
 
 pub type Data =
-  dict.Dict(String, Stop)
+  dict.Dict(String, Station)
 
-pub type Stop {
-  Stop(
+pub type Station {
+  Station(
     borough: Borough,
-    /// The routes that "normally" (ie, daytime weekdays) stop at the stop.
+    /// The routes that "normally" (ie, daytime weekdays) stop at the station.
     /// Does not account for rush hour express.
     daytime_routes: set.Set(Route),
     north_direction_label: String,
@@ -25,7 +25,7 @@ pub type Stop {
   )
 }
 
-pub fn stop_decoder() -> decode.Decoder(Stop) {
+pub fn station_decoder() -> decode.Decoder(Station) {
   use borough <- decode.field("borough", borough_decoder())
   use daytime_routes <- decode.field("daytime_routes", daytime_routes_decoder())
   use north_direction_label <- decode.field(
@@ -36,7 +36,7 @@ pub fn stop_decoder() -> decode.Decoder(Stop) {
     "south_direction_label",
     decode.string,
   )
-  decode.success(Stop(
+  decode.success(Station(
     borough:,
     daytime_routes:,
     north_direction_label:,

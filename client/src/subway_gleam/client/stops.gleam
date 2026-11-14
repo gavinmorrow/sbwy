@@ -20,45 +20,50 @@ pub fn main() -> Result(lustre.Runtime(Msg), lustre.Error) {
     |> result.map(json.parse(from: _, using: stops.model_decoder()))
 
   // TODO: handle (or log?) various errors here
-  let fav_stops = result.unwrap(get_fav_stops(), or: [])
-  let model = Model(..model, fav_stops:)
+  let fav_stations = result.unwrap(get_fav_stations(), or: [])
+  let model = Model(..model, fav_stations:)
 
   let app = lustre.application(init, update, view)
   lustre.start(app, onto: "#app", with: model)
 }
 
-fn get_fav_stops() -> Result(List(stops.StopLi), Nil) {
+fn get_fav_stations() -> Result(List(stops.StationLi), Nil) {
   use storage <- result.try(storage.local())
-  use fav_stops <- result.try(storage.get_item(storage, "fav_stops"))
-  json.parse(from: fav_stops, using: decode.list(of: stops.stop_li_decoder()))
+  // TODO: migrate from fav_stops to fav_stations?
+  use fav_stations <- result.try(storage.get_item(storage, "fav_stops"))
+  json.parse(
+    from: fav_stations,
+    using: decode.list(of: stops.station_li_decoder()),
+  )
   |> result.replace_error(Nil)
 }
 
-fn update_fav_stops(
-  with fun: fn(List(stops.StopLi)) -> List(stops.StopLi),
+fn update_fav_stations(
+  with fun: fn(List(stops.StationLi)) -> List(stops.StationLi),
 ) -> Result(Nil, Nil) {
   use storage <- result.try(storage.local())
-  let fav_stops = result.unwrap(get_fav_stops(), or: [])
-  let fav_stops = fun(fav_stops)
+  let fav_stations = result.unwrap(get_fav_stations(), or: [])
+  let fav_stations = fun(fav_stations)
   storage.set_item(
     storage,
+    // TODO: migrate from fav_stops to fav_stations?
     "fav_stops",
-    fav_stops |> json.array(of: stops.stop_li_to_json) |> json.to_string,
+    fav_stations |> json.array(of: stops.station_li_to_json) |> json.to_string,
   )
 }
 
-pub fn add_fav_stop(stop: stops.StopLi) -> Result(Nil, Nil) {
-  use fav_stops <- update_fav_stops
-  [stop, ..fav_stops]
+pub fn add_fav_station(station: stops.StationLi) -> Result(Nil, Nil) {
+  use fav_stations <- update_fav_stations
+  [station, ..fav_stations]
 }
 
-pub fn remove_fav_stop(stop: stops.StopLi) -> Result(Nil, Nil) {
-  use fav_stops <- update_fav_stops
-  list.filter(fav_stops, keeping: fn(s) { s != stop })
+pub fn remove_fav_station(station: stops.StationLi) -> Result(Nil, Nil) {
+  use fav_stations <- update_fav_stations
+  list.filter(fav_stations, keeping: fn(s) { s != station })
 }
 
-pub fn is_fav_stop(stop: stops.StopLi) -> Bool {
-  get_fav_stops() |> result.unwrap(or: []) |> list.contains(stop)
+pub fn is_fav_station(station: stops.StationLi) -> Bool {
+  get_fav_stations() |> result.unwrap(or: []) |> list.contains(station)
 }
 
 pub type Msg {

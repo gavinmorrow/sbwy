@@ -42,7 +42,9 @@ pub fn main() -> Nil {
   io.println_error("Done.")
 }
 
-fn parse(file: String) -> Result(List(#(String, st_extra.Stop)), ParseError) {
+fn parse(
+  file: String,
+) -> Result(List(#(String, st_extra.Station)), ParseError) {
   // Parse the csv
   use rows <- result.try(
     file
@@ -75,12 +77,12 @@ type ParseError {
   DecodeError(List(decode.DecodeError))
 }
 
-fn to_json(data: List(#(String, st_extra.Stop))) -> json.Json {
+fn to_json(data: List(#(String, st_extra.Station))) -> json.Json {
   json.dict(dict.from_list(data), function.identity, stop_to_json)
 }
 
-fn stop_to_json(stop: st_extra.Stop) -> json.Json {
-  let st_extra.Stop(
+fn stop_to_json(stop: st_extra.Station) -> json.Json {
+  let st_extra.Station(
     borough:,
     daytime_routes:,
     north_direction_label:,
@@ -117,7 +119,7 @@ fn daytime_routes_to_json(daytime_routes: set.Set(Route)) -> json.Json {
   )
 }
 
-fn stop_decoder() -> decode.Decoder(#(String, st_extra.Stop)) {
+fn stop_decoder() -> decode.Decoder(#(String, st_extra.Station)) {
   use id <- decode.field("GTFS Stop ID", decode.string)
   use borough <- decode.field("Borough", borough_decoder())
   use daytime_routes <- decode.field(
@@ -135,7 +137,7 @@ fn stop_decoder() -> decode.Decoder(#(String, st_extra.Stop)) {
 
   #(
     id,
-    st_extra.Stop(
+    st_extra.Station(
       borough:,
       daytime_routes:,
       north_direction_label:,

@@ -169,9 +169,9 @@ fn connecting_stop(
 
   connecting_train.ConnectingStop(
     id:,
-    name: schedule.stops
+    name: schedule.stations
       |> dict.get(id)
-      |> result.map(fn(stop) { stop.name }),
+      |> result.map(fn(station) { station.name }),
     time:,
   )
 }

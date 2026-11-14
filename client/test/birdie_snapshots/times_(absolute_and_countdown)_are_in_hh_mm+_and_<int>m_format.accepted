@@ -1,7 +1,7 @@
 ---
 version: 2.0.2
 title: Times (absolute and countdown) are in hh:mm+? and <int>m format.
-file: ./test/stop_test.gleam
+file: ./test/station_test.gleam
 test_name: arrivals_are_in_correct_format_test
 ---
 <span class="arrival-time"><span class="relative-time">0m</span><span class="time-of-day">19:59+</span></span>

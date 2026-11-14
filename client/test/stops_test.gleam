@@ -9,7 +9,7 @@ import lustre/dev/query.{type Query}
 import lustre/dev/simulate
 import lustre/effect
 import lustre/element
-import subway_gleam/gtfs/st.{Stop, StopId}
+import subway_gleam/gtfs/st.{Station, StopId}
 import subway_gleam/gtfs/st/route.{
   A, C, E, J, N, N1, N2, N3, N4, N5, N6, Q, R, W, Z,
 }
@@ -17,28 +17,30 @@ import subway_gleam/gtfs/st_extra.{Manhattan}
 import subway_gleam/shared/ffi/geolocation
 
 import subway_gleam/client/stops.{type Msg, UpdatePosition, update} as _
-import subway_gleam/shared/route/stops.{type Model, Model, StopLi, view} as _
+import subway_gleam/shared/route/stops.{type Model, Model, StationLi, view} as _
 
 fn simulate(model: Model) -> simulate.Simulation(Model, Msg) {
   simulate.application(init: fn(_) { #(model, effect.none()) }, update:, view:)
   |> simulate.start(Nil)
 }
 
+// TODO: rename tests to use station instead of stop?
+
 pub fn stops_link_to_stop_page_test() -> Nil {
   let html =
     view(Model(
-      all_stops: all_stops(),
+      all_stations: all_stations(),
       stop_routes: dict.new(),
       cur_position: option.Some(city_hall_position),
-      fav_stops:,
+      fav_stations:,
     ))
-  let stop_lis =
-    query.find_all(fav_stops_lis(), in: html)
-    |> list.append(query.find_all(stops_nearby_lis(), in: html))
+  let station_lis =
+    query.find_all(fav_station_lis(), in: html)
+    |> list.append(query.find_all(stations_nearby_lis(), in: html))
 
   birdie.snap(
     title: "Stop <li>s all link to correct stop page",
-    content: stop_lis |> list.map(element.to_string) |> string.join("\n"),
+    content: station_lis |> list.map(element.to_string) |> string.join("\n"),
   )
 }
 
@@ -46,57 +48,57 @@ pub fn shows_nearby_stops_test() -> Nil {
   let app =
     simulate(
       Model(
-        all_stops: all_stops(),
+        all_stations: all_stations(),
         stop_routes: dict.new(),
         cur_position: option.None,
-        fav_stops: [],
+        fav_stations: [],
       ),
     )
 
-  // Should have no nearby stops
-  let assert [] = query.find_all(stops_nearby_lis(), in: simulate.view(app))
+  // Should have no nearby stations
+  let assert [] = query.find_all(stations_nearby_lis(), in: simulate.view(app))
 
   let app = simulate.message(app, UpdatePosition(city_hall_position))
 
-  // Should have no nearby stops
-  let stops = query.find_all(stops_nearby_lis(), in: simulate.view(app))
-  assert list.length(stops) == 18
+  // Should have no nearby stations
+  let stations = query.find_all(stations_nearby_lis(), in: simulate.view(app))
+  assert list.length(stations) == 18
 }
 
 pub fn always_shows_favorites_test() -> Nil {
   let app =
     simulate(Model(
-      all_stops: all_stops(),
+      all_stations: all_stations(),
       stop_routes: dict.new(),
       cur_position: option.None,
-      fav_stops:,
+      fav_stations:,
     ))
 
   // All favorites should be shown
-  let shown_favs = query.find_all(fav_stops_lis(), in: simulate.view(app))
-  assert list.length(shown_favs) == list.length(fav_stops)
+  let shown_favs = query.find_all(fav_station_lis(), in: simulate.view(app))
+  assert list.length(shown_favs) == list.length(fav_stations)
 
   let app = simulate.message(app, UpdatePosition(city_hall_position))
 
   // All favorites should still be shown
-  let shown_favs = query.find_all(fav_stops_lis(), in: simulate.view(app))
-  assert list.length(shown_favs) == list.length(fav_stops)
+  let shown_favs = query.find_all(fav_station_lis(), in: simulate.view(app))
+  assert list.length(shown_favs) == list.length(fav_stations)
 }
 
-fn fav_stops_list() -> Query {
-  query.element(query.class("favorite-stops-list"))
+fn fav_stations_list() -> Query {
+  query.element(query.class("favorite-stations-list"))
 }
 
-fn fav_stops_lis() -> Query {
-  query.child(of: fav_stops_list(), matching: query.tag("li"))
+fn fav_station_lis() -> Query {
+  query.child(of: fav_stations_list(), matching: query.tag("li"))
 }
 
-fn stops_nearby_list() -> Query {
-  query.element(query.class("stops-nearby-list"))
+fn stations_nearby_list() -> Query {
+  query.element(query.class("stations-nearby-list"))
 }
 
-fn stops_nearby_lis() -> Query {
-  query.child(of: stops_nearby_list(), matching: query.tag("li"))
+fn stations_nearby_lis() -> Query {
+  query.child(of: stations_nearby_list(), matching: query.tag("li"))
 }
 
 const city_hall_position: geolocation.Position = geolocation.Position(
@@ -107,19 +109,19 @@ const city_hall_position: geolocation.Position = geolocation.Position(
   timestamp: timestamp.unix_epoch,
 )
 
-const fav_stops = [
+const fav_stations = [
   // Should be within distance
-  StopLi(id: StopId("R24"), name: "City Hall"),
+  StationLi(id: StopId("R24"), name: "City Hall"),
   // Should be outside of distance
-  StopLi(id: StopId("Q05"), name: "96 St"),
+  StationLi(id: StopId("Q05"), name: "96 St"),
 ]
 
-/// Not actually all stops, but a bunch of stops cenetered around City Hall, and
-/// then a couple extra ones that shouldn't be within range.
-fn all_stops() -> List(st.Stop) {
+/// Not actually all stations, but a bunch of stops cenetered around City Hall,
+/// and then a couple extra ones that shouldn't be within range.
+fn all_stations() -> List(st.Station) {
   [
     // Should be within distance
-    Stop(
+    Station(
       StopId("R24"),
       "City Hall",
       40.713282,
@@ -131,7 +133,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Downtown",
     ),
-    Stop(
+    Station(
       StopId("640"),
       "Brooklyn Bridge-City Hall",
       40.713065,
@@ -143,7 +145,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Downtown",
     ),
-    Stop(
+    Station(
       StopId("M21"),
       "Chambers St",
       40.713243,
@@ -155,7 +157,7 @@ fn all_stops() -> List(st.Stop) {
       "Brooklyn",
       "Downtown",
     ),
-    Stop(
+    Station(
       StopId("228"),
       "Park Place",
       40.713051,
@@ -167,7 +169,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Brooklyn",
     ),
-    Stop(
+    Station(
       StopId("A36"),
       "Chambers St",
       40.714111,
@@ -179,7 +181,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Brooklyn",
     ),
-    Stop(
+    Station(
       StopId("M22"),
       "Fulton St",
       40.710374,
@@ -191,7 +193,7 @@ fn all_stops() -> List(st.Stop) {
       "Brooklyn",
       "Downtown",
     ),
-    Stop(
+    Station(
       StopId("E01"),
       "World Trade Center",
       40.712582,
@@ -203,7 +205,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Last Stop",
     ),
-    Stop(
+    Station(
       StopId("A38"),
       "Fulton St",
       40.710197,
@@ -215,7 +217,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Brooklyn",
     ),
-    Stop(
+    Station(
       StopId("229"),
       "Fulton St",
       40.709416,
@@ -227,7 +229,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Brooklyn",
     ),
-    Stop(
+    Station(
       StopId("418"),
       "Fulton St",
       40.710368,
@@ -239,7 +241,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Downtown",
     ),
-    Stop(
+    Station(
       StopId("137"),
       "Chambers St",
       40.715478,
@@ -251,7 +253,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Downtown",
     ),
-    Stop(
+    Station(
       StopId("R25"),
       "Cortlandt St",
       40.710668,
@@ -263,7 +265,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Downtown",
     ),
-    Stop(
+    Station(
       StopId("138"),
       "WTC Cortlandt",
       40.711835,
@@ -275,7 +277,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Downtown",
     ),
-    Stop(
+    Station(
       StopId("230"),
       "Wall St",
       40.706821,
@@ -287,7 +289,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Brooklyn",
     ),
-    Stop(
+    Station(
       StopId("136"),
       "Franklin St",
       40.719318,
@@ -299,7 +301,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Downtown",
     ),
-    Stop(
+    Station(
       StopId("419"),
       "Wall St",
       40.707557,
@@ -311,7 +313,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Downtown",
     ),
-    Stop(
+    Station(
       StopId("Q01"),
       "Canal St",
       40.718383,
@@ -323,7 +325,7 @@ fn all_stops() -> List(st.Stop) {
       "Uptown",
       "Downtown",
     ),
-    Stop(
+    Station(
       StopId("M20"),
       "Canal St",
       40.718092,
@@ -336,7 +338,7 @@ fn all_stops() -> List(st.Stop) {
       "Downtown",
     ),
     // Should not be within distance
-    Stop(
+    Station(
       id: StopId("625"),
       name: "96 St",
       lat: 40.785672,
@@ -348,7 +350,7 @@ fn all_stops() -> List(st.Stop) {
       north_direction_label: "The Bronx",
       south_direction_label: "Downtown",
     ),
-    Stop(
+    Station(
       id: StopId("Q05"),
       name: "96 St",
       lat: 40.784318,
@@ -360,7 +362,7 @@ fn all_stops() -> List(st.Stop) {
       north_direction_label: "Last Stop",
       south_direction_label: "Downtown",
     ),
-    Stop(
+    Station(
       id: StopId("626"),
       name: "86 St",
       lat: 40.779492,
@@ -372,7 +374,7 @@ fn all_stops() -> List(st.Stop) {
       north_direction_label: "Uptown",
       south_direction_label: "Downtown",
     ),
-    Stop(
+    Station(
       id: StopId("624"),
       name: "103 St",
       lat: 40.7906,
