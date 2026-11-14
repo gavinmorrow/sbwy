@@ -226,10 +226,11 @@ fn handler(state: state.Ref, req: wisp.Request) -> wisp.Response {
     ["health"] -> route.health(req)
     ["favicon.ico"] -> wisp.redirect(to: "/static/icons/192.png")
     ["map"] -> route.map(req)
+    // TODO: change url to stations? Consider redirects, and getting rid of bots.
     ["stops"] ->
       case env.profile_pages() |> list.contains("stops") {
-        True -> eflame.profile("stops", fn() { route.stops(req, state) })
-        False -> route.stops(req, state)
+        True -> eflame.profile("stops", fn() { route.stations(req, state) })
+        False -> route.stations(req, state)
       }
     // TODO: change url to station? Consider redirects, and getting rid of bots.
     ["stop", stop_id] ->

@@ -17,7 +17,7 @@ import subway_gleam/shared/component/navbar.{navbar}
 import subway_gleam/shared/component/route_bullet.{
   type RouteBullet, route_bullet,
 }
-import subway_gleam/shared/route/stops
+import subway_gleam/shared/route/stations
 import subway_gleam/shared/util/live_status.{type LiveStatus}
 import subway_gleam/shared/util/time.{type Time}
 
@@ -140,8 +140,8 @@ pub fn view(model: Model, toggle_fav_btn_pressed_msg: msg) -> Element(msg) {
   ])
 }
 
-pub fn model_to_station_li(model: Model) -> stops.StationLi {
-  stops.StationLi(id: model.id, name: model.name)
+pub fn model_to_station_li(model: Model) -> stations.StationLi {
+  stations.StationLi(id: model.id, name: model.name)
 }
 
 pub fn model_decoder() -> decode.Decoder(Model) {

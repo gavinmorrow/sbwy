@@ -10,7 +10,7 @@ import plinth/browser/element
 import plinth/browser/location
 import plinth/browser/window
 
-import subway_gleam/client/stops
+import subway_gleam/client/stations
 import subway_gleam/client/util/set_interval
 import subway_gleam/shared/route/station.{type Model, Model, view}
 import subway_gleam/shared/util/live_status.{live_status}
@@ -23,7 +23,7 @@ pub fn main() -> Result(lustre.Runtime(Msg), lustre.Error) {
     |> result.map(element.inner_text)
     |> result.map(json.parse(_, station.model_decoder()))
 
-  let is_fav = stops.is_fav_station(station.model_to_station_li(model))
+  let is_fav = stations.is_fav_station(station.model_to_station_li(model))
   let model = Model(..model, is_fav:)
 
   let app = lustre.application(init, update, view(_, ToggleFavBtnPressed))
@@ -54,8 +54,9 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.from(fn(_dispatch) {
         // TODO: handle error
         let assert Ok(_) = case model.is_fav {
-          True -> stops.remove_fav_station(station.model_to_station_li(model))
-          False -> stops.add_fav_station(station.model_to_station_li(model))
+          True ->
+            stations.remove_fav_station(station.model_to_station_li(model))
+          False -> stations.add_fav_station(station.model_to_station_li(model))
         }
         Nil
       }),

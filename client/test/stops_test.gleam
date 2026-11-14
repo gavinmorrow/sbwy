@@ -16,8 +16,8 @@ import subway_gleam/gtfs/st/route.{
 import subway_gleam/gtfs/st_extra.{Manhattan}
 import subway_gleam/shared/ffi/geolocation
 
-import subway_gleam/client/stops.{type Msg, UpdatePosition, update} as _
-import subway_gleam/shared/route/stops.{type Model, Model, StationLi, view} as _
+import subway_gleam/client/stations.{type Msg, UpdatePosition, update} as _
+import subway_gleam/shared/route/stations.{type Model, Model, StationLi, view} as _
 
 fn simulate(model: Model) -> simulate.Simulation(Model, Msg) {
   simulate.application(init: fn(_) { #(model, effect.none()) }, update:, view:)

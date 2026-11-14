@@ -10,14 +10,14 @@ import plinth/browser/element
 import plinth/javascript/storage
 
 import subway_gleam/shared/ffi/geolocation
-import subway_gleam/shared/route/stops.{type Model, Model, view}
+import subway_gleam/shared/route/stations.{type Model, Model, view}
 
 pub fn main() -> Result(lustre.Runtime(Msg), lustre.Error) {
   // TODO: handle errors: model not found, and invalid JSON
   let assert Ok(Ok(model)) =
     document.get_element_by_id("model")
     |> result.map(element.inner_text)
-    |> result.map(json.parse(from: _, using: stops.model_decoder()))
+    |> result.map(json.parse(from: _, using: stations.model_decoder()))
 
   // TODO: handle (or log?) various errors here
   let fav_stations = result.unwrap(get_fav_stations(), or: [])
@@ -27,19 +27,19 @@ pub fn main() -> Result(lustre.Runtime(Msg), lustre.Error) {
   lustre.start(app, onto: "#app", with: model)
 }
 
-fn get_fav_stations() -> Result(List(stops.StationLi), Nil) {
+fn get_fav_stations() -> Result(List(stations.StationLi), Nil) {
   use storage <- result.try(storage.local())
   // TODO: migrate from fav_stops to fav_stations?
   use fav_stations <- result.try(storage.get_item(storage, "fav_stops"))
   json.parse(
     from: fav_stations,
-    using: decode.list(of: stops.station_li_decoder()),
+    using: decode.list(of: stations.station_li_decoder()),
   )
   |> result.replace_error(Nil)
 }
 
 fn update_fav_stations(
-  with fun: fn(List(stops.StationLi)) -> List(stops.StationLi),
+  with fun: fn(List(stations.StationLi)) -> List(stations.StationLi),
 ) -> Result(Nil, Nil) {
   use storage <- result.try(storage.local())
   let fav_stations = result.unwrap(get_fav_stations(), or: [])
@@ -48,21 +48,23 @@ fn update_fav_stations(
     storage,
     // TODO: migrate from fav_stops to fav_stations?
     "fav_stops",
-    fav_stations |> json.array(of: stops.station_li_to_json) |> json.to_string,
+    fav_stations
+      |> json.array(of: stations.station_li_to_json)
+      |> json.to_string,
   )
 }
 
-pub fn add_fav_station(station: stops.StationLi) -> Result(Nil, Nil) {
+pub fn add_fav_station(station: stations.StationLi) -> Result(Nil, Nil) {
   use fav_stations <- update_fav_stations
   [station, ..fav_stations]
 }
 
-pub fn remove_fav_station(station: stops.StationLi) -> Result(Nil, Nil) {
+pub fn remove_fav_station(station: stations.StationLi) -> Result(Nil, Nil) {
   use fav_stations <- update_fav_stations
   list.filter(fav_stations, keeping: fn(s) { s != station })
 }
 
-pub fn is_fav_station(station: stops.StationLi) -> Bool {
+pub fn is_fav_station(station: stations.StationLi) -> Bool {
   get_fav_stations() |> result.unwrap(or: []) |> list.contains(station)
 }
 

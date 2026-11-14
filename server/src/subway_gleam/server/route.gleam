@@ -8,7 +8,7 @@ import subway_gleam/server/lustre_middleware.{Body, lustre_res}
 import subway_gleam/server/route/line
 import subway_gleam/server/route/station
 import subway_gleam/server/route/station/alerts
-import subway_gleam/server/route/stops
+import subway_gleam/server/route/stations
 import subway_gleam/server/route/train
 import subway_gleam/server/route/trip
 import subway_gleam/shared/component/navbar.{navbar}
@@ -57,7 +57,7 @@ pub fn map(req: wisp.Request) -> wisp.Response {
   #(Body(body:), res)
 }
 
-pub const stops = stops.stops
+pub const stations = stations.stops
 
 pub const station = station.station
 
