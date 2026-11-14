@@ -10,7 +10,8 @@ import subway_gleam/gtfs/st/route
 import subway_gleam/gtfs/st
 import subway_gleam/gtfs/st_extra
 
-const path = st.schedule_sample_data_path
+// const path = st.schedule_sample_data_path
+const path = "./priv/schedule_sample.json"
 
 pub fn main() -> Nil {
   io.println_error("Fetching...")
@@ -166,7 +167,8 @@ fn stop_id_to_string(stop_id: st.StopId) -> String {
 }
 
 fn load_st_extra_data() -> st_extra.Data {
-  let assert Ok(file) = simplifile.read(from: st_extra.data_file_path)
+  let assert Ok(file) =
+    simplifile.read(from: "./priv/" <> st_extra.data_file_path)
     as "data file should be prebuilt"
   let assert Ok(stops) =
     json.parse(file, using: decode.dict(decode.string, st_extra.stop_decoder()))

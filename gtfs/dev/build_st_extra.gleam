@@ -20,7 +20,9 @@ import subway_gleam/gtfs/st_extra
 
 const data_file_path = "./MTA_Subway_Stations.csv"
 
-const output_file_path = st_extra.data_file_path
+// FIXME: why is this breaking??? I think it is a bug in Gleam.
+// const output_file_path = st_extra.data_file_path
+const output_file_path = "/st_extra.json"
 
 pub fn main() -> Nil {
   io.println_error("Reading file...")
@@ -34,7 +36,8 @@ pub fn main() -> Nil {
   io.println_error("Generating code...")
   let output = to_json(stops) |> json.to_string
   io.println_error("Writing output...")
-  let assert Ok(Nil) = simplifile.write(output, to: output_file_path)
+  let assert Ok(Nil) =
+    simplifile.write(output, to: "./priv/" <> output_file_path)
 
   io.println_error("Done.")
 }
